@@ -317,3 +317,21 @@ class TestGrammar(unittest.TestCase):
         grammar1 = Grammar(non_terminals, terminals, prods1, start)
 
         self.assertFalse(grammar0 == grammar1)
+
+    def test_closure(self):
+        non_terminals = set('SAB')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', 'AB'),
+            Prod('A', 'aA'),
+            Prod('A', Grammar.EPSILON),
+            Prod('B', 'bB'),
+            Prod('B', Grammar.EPSILON)
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        result = grammar._closure(start)
+        expected = set('SAB')
+
+        self.assertSetEqual(result, expected)
