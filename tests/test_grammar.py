@@ -127,7 +127,7 @@ class TestGrammar(unittest.TestCase):
         grammar = Grammar(non_terminals, terminals, productions, start)
         result = grammar.remove_unreachable()
 
-        exp_non_terminals = set('SBD')
+        exp_non_terminals = set('SDB')
         exp_terminals = set('abd')
         exp_productions = set([
             Prod('S', 'aSa'),
@@ -144,6 +144,56 @@ class TestGrammar(unittest.TestCase):
             exp_terminals,
             exp_productions,
             exp_start)
+
+        self.assertEqual(grammar, exp_grammar)
+
+    def test_remove_useless(self):
+        non_terminals = set('SABCDEF')
+        terminals = set('abcdef')
+        productions = set([
+            Prod('S', 'aSa'),
+            Prod('S', 'FbD'),
+            Prod('S', 'BE'),
+            Prod('A', 'aA'),
+            Prod('A', 'CA'),
+            Prod('A', Grammar.EPSILON),
+            Prod('B', 'bB'),
+            Prod('B', 'FE'),
+            Prod('C', 'cCb'),
+            Prod('C', 'AcA'),
+            Prod('D', 'Dd'),
+            Prod('D', 'fF'),
+            Prod('D', 'c'),
+            Prod('E', 'BC'),
+            Prod('E', 'eE'),
+            Prod('E', 'EB'),
+            Prod('F', 'fF'),
+            Prod('F', 'Dd')
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        result = grammar.remove_useless()
+
+        exp_non_terminals = set('SFD')
+        exp_terminals = set('abcdf')
+        exp_productions = set([
+            Prod('S', 'aSa'),
+            Prod('S', 'FbD'),
+            Prod('F', 'Dd'),
+            Prod('F', 'fF'),
+            Prod('D', 'c'),
+            Prod('D', 'fF'),
+            Prod('D', 'Dd')
+        ])
+        exp_start = 'S'
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
+
+        print(grammar.terminals)
+        print(exp_grammar.terminals)
 
         self.assertEqual(grammar, exp_grammar)
 
