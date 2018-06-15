@@ -5,8 +5,8 @@ from grammar.production import Prod
 class TestGrammar(unittest.TestCase):
 
     def test_productive(self):
-        non_terminals = set(list('SABCD'))
-        terminals = set(list('abcd'))
+        non_terminals = set('SABCD')
+        terminals = set('abcd')
         productions = set([
             Prod('S', 'aS'),
             Prod('S', 'BC'),
@@ -27,3 +27,40 @@ class TestGrammar(unittest.TestCase):
         expected = set(list('BDS'))
 
         self.assertSetEqual(result, expected)
+
+    def test_is_empty_false(self):
+        '''
+        Test example got from here:
+        https://www.eecs.yorku.ca/course_archive/2001-02/S/2001B/lectures/l.pdf
+        '''
+        non_terminals = set('SAB')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', 'AB'),
+            Prod('A', 'BB'),
+            Prod('A', 'a'),
+            Prod('B', 'AB'),
+            Prod('B', 'b')
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        result = grammar.is_empty()
+
+        self.assertFalse(result)
+
+    def test_is_empty_true(self):
+        non_terminals = set('SAB')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', 'AB'),
+            Prod('A', 'AB'),
+            Prod('B', 'BB'),
+            Prod('B', 'b')
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        result = grammar.is_empty()
+
+        self.assertTrue(result)

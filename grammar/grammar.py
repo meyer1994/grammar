@@ -12,6 +12,10 @@ class Grammar(object):
         self.productions = productions
         self.start = start
 
+    def is_empty(self):
+        productive_symbols = self.productive()
+        return self.start not in productive_symbols
+
     def productive(self):
         '''
         Gets the set of productive symbols of the grammar.
