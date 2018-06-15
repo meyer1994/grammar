@@ -14,5 +14,6 @@ script:
   - "coverage run -m unittest tests -vb"
 
 after_success:
+  - "coverage report -m"
   - "pip install codecov"
   - "codecov"
