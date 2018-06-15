@@ -127,6 +127,34 @@ class Grammar(object):
         for prod in prods_to_remove:
             self.productions.discard(prod)
 
+    def _closure(self, start, symbol=EPSILON):
+        '''
+        Gets the non terminal symbols that derive EPSILON in 0 or more
+        derivations
+        '''
+        old_set = set()
+        while True:
+            # Ni
+            new_set = set()
+
+            # (Ni-1 U epsilon)*
+            union = old_set | set(Grammar.EPSILON)
+
+            for (non_term, prod) in self.productions:
+                # alpha contained in (Ni-1 U Vt)*
+                if set(prod) <= union:
+                    new_set.add(non_term)
+
+            # Ni-1 U new_set
+            new_set |= old_set
+
+            if new_set == old_set:
+                break
+
+            old_set = new_set
+
+        return old_set
+
     def __eq__(self, other):
         vnt = self.non_terminals == other.non_terminals
         vt = self.terminals == other.terminals
