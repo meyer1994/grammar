@@ -123,7 +123,33 @@ class TestGrammar(unittest.TestCase):
         grammar = Grammar(non_terminals, terminals, productions, start)
 
         result = grammar.productive()
-        expected = set(list('BDS'))
+        expected = set('BDS')
+
+        self.assertSetEqual(result, expected)
+
+    def test_reachable(self):
+        non_terminals = set('SABCD')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', 'aSa'),
+            Prod('S', 'dDd'),
+            Prod('A', 'aB'),
+            Prod('A', 'Cc'),
+            Prod('A', 'a'),
+            Prod('B', 'dD'),
+            Prod('B', 'bB'),
+            Prod('B', 'b'),
+            Prod('C', 'Aa'),
+            Prod('C', 'dD'),
+            Prod('C', 'c'),
+            Prod('D', 'bbB'),
+            Prod('D', 'd')
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        result = grammar.reachable()
+        expected = set('SBDabd')
 
         self.assertSetEqual(result, expected)
 
