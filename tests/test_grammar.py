@@ -65,6 +65,44 @@ class TestGrammar(unittest.TestCase):
         expected_terminal = set('bcd')
         self.assertSetEqual(result_terminal, expected_terminal)
 
+    def test_remove_unproductive(self):
+        non_terminals = set('SABCD')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', 'aS'),
+            Prod('S', 'BC'),
+            Prod('S', 'BD'),
+            Prod('A', 'cC'),
+            Prod('A', 'AB'),
+            Prod('B', 'bB'),
+            Prod('B', Grammar.EPSILON),
+            Prod('C', 'aA'),
+            Prod('C', 'BC'),
+            Prod('D', 'dDd'),
+            Prod('D', 'c')
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        grammar.remove_unproductive()
+
+        exp_non_terminals = set('SBD')
+        exp_terminals = set(grammar.terminals)
+        exp_productions = set([
+            Prod('S', 'aS'),
+            Prod('S', 'BD'),
+            Prod('B', 'bB'),
+            Prod('B', Grammar.EPSILON),
+            Prod('D', 'dDd'),
+            Prod('D', 'c')
+        ])
+        exp_start = 'S'
+
+        self.assertSetEqual(grammar.non_terminals, exp_non_terminals)
+        self.assertSetEqual(grammar.terminals, exp_terminals)
+        self.assertSetEqual(grammar.productions, exp_productions)
+        self.assertEqual(grammar.start, exp_start)
+
     def test_productive(self):
         non_terminals = set('SABCD')
         terminals = set('abcd')

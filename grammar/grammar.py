@@ -20,6 +20,11 @@ class Grammar(object):
         self.terminals.discard(symbol)
         self._remove_productions_with_symbol(symbol)
 
+    def remove_unproductive(self):
+        unproductive_symbols = self.non_terminals - self.productive()
+        for symbol in unproductive_symbols:
+            self.remove_non_terminal(symbol)
+
     def is_empty(self):
         productive_symbols = self.productive()
         return self.start not in productive_symbols
