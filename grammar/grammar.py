@@ -12,6 +12,14 @@ class Grammar(object):
         self.productions = productions
         self.start = start
 
+    def remove_non_terminal(self, symbol):
+        self.non_terminals.discard(symbol)
+        self._remove_productions_with_symbol(symbol)
+
+    def remove_terminal(self, symbol):
+        self.terminals.discard(symbol)
+        self._remove_productions_with_symbol(symbol)
+
     def is_empty(self):
         productive_symbols = self.productive()
         return self.start not in productive_symbols
@@ -42,3 +50,14 @@ class Grammar(object):
             old_set = new_set
 
         return old_set
+
+    def _remove_productions_with_symbol(self, symbol):
+        # We use a list here because we cannot change set size while iterating
+        # over it
+        prods_to_remove = []
+        for prod in self.productions:
+            if prod.n == symbol or symbol in prod.p:
+                prods_to_remove.append(prod)
+
+        for prod in prods_to_remove:
+            self.productions.discard(prod)
