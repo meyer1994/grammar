@@ -30,9 +30,20 @@ class Grammar(object):
         '''
         Remove the unproductive symbols from the grammar.
         '''
-        unproductive_symbols = self.non_terminals - self.productive()
-        for symbol in unproductive_symbols:
+        unproductive = self.non_terminals - self.productive()
+        for symbol in unproductive:
             self.remove_non_terminal(symbol)
+
+    def remove_unreachable(self):
+        '''
+        Remove all unreachable symbols from the grammar.
+        '''
+        unreachable = (self.terminals | self.non_terminals) - self.reachable()
+        for symbol in unreachable:
+            if symbol in self.terminals:
+                self.remove_terminal(symbol)
+            else:
+                self.remove_non_terminal(symbol)
 
     def is_empty(self):
         '''

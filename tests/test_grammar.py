@@ -97,11 +97,55 @@ class TestGrammar(unittest.TestCase):
             Prod('D', 'c')
         ])
         exp_start = 'S'
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
 
-        self.assertSetEqual(grammar.non_terminals, exp_non_terminals)
-        self.assertSetEqual(grammar.terminals, exp_terminals)
-        self.assertSetEqual(grammar.productions, exp_productions)
-        self.assertEqual(grammar.start, exp_start)
+        self.assertEqual(grammar, exp_grammar)
+
+    def test_remove_unreachable(self):
+        non_terminals = set('SABCD')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', 'aSa'),
+            Prod('S', 'dDd'),
+            Prod('A', 'aB'),
+            Prod('A', 'Cc'),
+            Prod('A', 'a'),
+            Prod('B', 'dD'),
+            Prod('B', 'bB'),
+            Prod('B', 'b'),
+            Prod('C', 'Aa'),
+            Prod('C', 'dD'),
+            Prod('C', 'c'),
+            Prod('D', 'bbB'),
+            Prod('D', 'd')
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        result = grammar.remove_unreachable()
+
+        exp_non_terminals = set('SBD')
+        exp_terminals = set('abd')
+        exp_productions = set([
+            Prod('S', 'aSa'),
+            Prod('S', 'dDd'),
+            Prod('B', 'dD'),
+            Prod('B', 'bB'),
+            Prod('B', 'b'),
+            Prod('D', 'bbB'),
+            Prod('D', 'd')
+        ])
+        exp_start = 'S'
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
+
+        self.assertEqual(grammar, exp_grammar)
 
     def test_productive(self):
         non_terminals = set('SABCD')
