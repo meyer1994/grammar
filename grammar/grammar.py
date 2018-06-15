@@ -66,3 +66,10 @@ class Grammar(object):
 
         for prod in prods_to_remove:
             self.productions.discard(prod)
+
+    def __eq__(self, other):
+        vnt = self.non_terminals == other.non_terminals
+        vt = self.terminals == other.terminals
+        prods = self.productions == other.productions
+        start = self.start == other.start
+        return vnt and vt and prods and start

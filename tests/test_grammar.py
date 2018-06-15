@@ -163,3 +163,37 @@ class TestGrammar(unittest.TestCase):
         result = grammar.is_empty()
 
         self.assertTrue(result)
+
+    def test_equal_true(self):
+        non_terminals = set('SAB')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', 'AB'),
+            Prod('A', 'AB'),
+            Prod('B', 'BB'),
+            Prod('B', 'b')
+        ])
+        start = 'S'
+        grammar0 = Grammar(non_terminals, terminals, productions, start)
+        grammar1 = Grammar(non_terminals, terminals, productions, start)
+
+        self.assertTrue(grammar0 == grammar1)
+
+    def test_equal_false(self):
+        non_terminals = set('SAB')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', 'AB'),
+            Prod('A', 'AB'),
+            Prod('B', 'BB'),
+            Prod('B', 'b')
+        ])
+        start = 'S'
+        grammar0 = Grammar(non_terminals, terminals, productions, start)
+
+        # Remove random item
+        prods1 = productions.copy()
+        prods1.pop()
+        grammar1 = Grammar(non_terminals, terminals, prods1, start)
+
+        self.assertFalse(grammar0 == grammar1)
