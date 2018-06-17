@@ -8,10 +8,10 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('A', 'AB'),
-            Prod('B', 'BB'),
-            Prod('B', 'b')
+            Prod('S', ('A', 'B')),
+            Prod('A', ('A', 'B')),
+            Prod('B', ('B', 'B')),
+            Prod('B', ('b',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -30,17 +30,17 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SABCD')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'aS'),
-            Prod('S', 'BC'),
-            Prod('S', 'BD'),
-            Prod('A', 'cC'),
-            Prod('A', 'AB'),
-            Prod('B', 'bB'),
-            Prod('B', Grammar.EPSILON),
-            Prod('C', 'aA'),
-            Prod('C', 'BC'),
-            Prod('D', 'dDd'),
-            Prod('D', 'c')
+            Prod('S', ('a', 'S')),
+            Prod('S', ('B', 'C')),
+            Prod('S', ('B', 'D')),
+            Prod('A', ('c', 'C')),
+            Prod('A', ('A', 'B')),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,)),
+            Prod('C', ('a', 'A')),
+            Prod('C', ('B', 'C')),
+            Prod('D', ('d', 'D', 'd')),
+            Prod('D', ('c',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -49,15 +49,15 @@ class TestGrammar(unittest.TestCase):
 
         result_prod = grammar.productions
         expected_prod = set([
-            Prod('S', 'BC'),
-            Prod('S', 'BD'),
-            Prod('A', 'cC'),
-            Prod('A', 'AB'),
-            Prod('B', 'bB'),
-            Prod('B', Grammar.EPSILON),
-            Prod('C', 'BC'),
-            Prod('D', 'dDd'),
-            Prod('D', 'c')
+            Prod('S', ('B', 'C')),
+            Prod('S', ('B', 'D')),
+            Prod('A', ('c', 'C')),
+            Prod('A', ('A', 'B')),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,)),
+            Prod('C', ('B', 'C')),
+            Prod('D', ('d', 'D', 'd')),
+            Prod('D', ('c',))
         ])
         self.assertSetEqual(result_prod, expected_prod)
 
@@ -69,17 +69,17 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SABCD')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'aS'),
-            Prod('S', 'BC'),
-            Prod('S', 'BD'),
-            Prod('A', 'cC'),
-            Prod('A', 'AB'),
-            Prod('B', 'bB'),
-            Prod('B', Grammar.EPSILON),
-            Prod('C', 'aA'),
-            Prod('C', 'BC'),
-            Prod('D', 'dDd'),
-            Prod('D', 'c')
+            Prod('S', ('a', 'S')),
+            Prod('S', ('B', 'C')),
+            Prod('S', ('B', 'D')),
+            Prod('A', ('c', 'C')),
+            Prod('A', ('A', 'B')),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,)),
+            Prod('C', ('a', 'A')),
+            Prod('C', ('B', 'C')),
+            Prod('D', ('d', 'D', 'd')),
+            Prod('D', ('c',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -89,12 +89,12 @@ class TestGrammar(unittest.TestCase):
         exp_non_terminals = set('SBD')
         exp_terminals = set(grammar.terminals)
         exp_productions = set([
-            Prod('S', 'aS'),
-            Prod('S', 'BD'),
-            Prod('B', 'bB'),
-            Prod('B', Grammar.EPSILON),
-            Prod('D', 'dDd'),
-            Prod('D', 'c')
+            Prod('S', ('a', 'S')),
+            Prod('S', ('B', 'D')),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,)),
+            Prod('D', ('d', 'D', 'd')),
+            Prod('D', ('c',))
         ])
         exp_start = 'S'
         exp_grammar = Grammar(
@@ -109,19 +109,19 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SABCD')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'aSa'),
-            Prod('S', 'dDd'),
-            Prod('A', 'aB'),
-            Prod('A', 'Cc'),
-            Prod('A', 'a'),
-            Prod('B', 'dD'),
-            Prod('B', 'bB'),
-            Prod('B', 'b'),
-            Prod('C', 'Aa'),
-            Prod('C', 'dD'),
-            Prod('C', 'c'),
-            Prod('D', 'bbB'),
-            Prod('D', 'd')
+            Prod('S', ('a', 'S', 'a')),
+            Prod('S', ('d', 'D', 'd')),
+            Prod('A', ('a', 'B')),
+            Prod('A', ('C', 'c')),
+            Prod('A', ('a',)),
+            Prod('B', ('d', 'D')),
+            Prod('B', ('b', 'B')),
+            Prod('B', ('b',)),
+            Prod('C', ('A', 'a')),
+            Prod('C', ('d', 'D')),
+            Prod('C', ('c',)),
+            Prod('D', ('b', 'b', 'B')),
+            Prod('D', ('d',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -130,13 +130,13 @@ class TestGrammar(unittest.TestCase):
         exp_non_terminals = set('SDB')
         exp_terminals = set('abd')
         exp_productions = set([
-            Prod('S', 'aSa'),
-            Prod('S', 'dDd'),
-            Prod('B', 'dD'),
-            Prod('B', 'bB'),
-            Prod('B', 'b'),
-            Prod('D', 'bbB'),
-            Prod('D', 'd')
+            Prod('S', ('a', 'S', 'a')),
+            Prod('S', ('d', 'D', 'd')),
+            Prod('B', ('d', 'D')),
+            Prod('B', ('b', 'B')),
+            Prod('B', ('b',)),
+            Prod('D', ('b', 'b', 'B')),
+            Prod('D', ('d',))
         ])
         exp_start = 'S'
         exp_grammar = Grammar(
@@ -151,24 +151,24 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SABCDEF')
         terminals = set('abcdef')
         productions = set([
-            Prod('S', 'aSa'),
-            Prod('S', 'FbD'),
-            Prod('S', 'BE'),
-            Prod('A', 'aA'),
-            Prod('A', 'CA'),
-            Prod('A', Grammar.EPSILON),
-            Prod('B', 'bB'),
-            Prod('B', 'FE'),
-            Prod('C', 'cCb'),
-            Prod('C', 'AcA'),
-            Prod('D', 'Dd'),
-            Prod('D', 'fF'),
-            Prod('D', 'c'),
-            Prod('E', 'BC'),
-            Prod('E', 'eE'),
-            Prod('E', 'EB'),
-            Prod('F', 'fF'),
-            Prod('F', 'Dd')
+            Prod('S', ('a', 'S', 'a')),
+            Prod('S', ('F', 'b', 'D')),
+            Prod('S', ('B', 'E')),
+            Prod('A', ('a', 'A')),
+            Prod('A', ('C', 'A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b', 'B')),
+            Prod('B', ('F', 'E')),
+            Prod('C', ('c', 'C', 'b')),
+            Prod('C', ('A', 'c', 'A')),
+            Prod('D', ('D', 'd')),
+            Prod('D', ('f', 'F')),
+            Prod('D', ('c',)),
+            Prod('E', ('B', 'C')),
+            Prod('E', ('e', 'E')),
+            Prod('E', ('E', 'B')),
+            Prod('F', ('f', 'F')),
+            Prod('F', ('D', 'd'))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -177,13 +177,13 @@ class TestGrammar(unittest.TestCase):
         exp_non_terminals = set('SFD')
         exp_terminals = set('abcdf')
         exp_productions = set([
-            Prod('S', 'aSa'),
-            Prod('S', 'FbD'),
-            Prod('F', 'Dd'),
-            Prod('F', 'fF'),
-            Prod('D', 'c'),
-            Prod('D', 'fF'),
-            Prod('D', 'Dd')
+            Prod('S', ('a', 'S', 'a')),
+            Prod('S', ('F', 'b', 'D')),
+            Prod('F', ('D', 'd')),
+            Prod('F', ('f', 'F')),
+            Prod('D', ('c',)),
+            Prod('D', ('f', 'F')),
+            Prod('D', ('D', 'd'))
         ])
         exp_start = 'S'
         exp_grammar = Grammar(
@@ -201,17 +201,17 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SABCD')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'AbB'),
-            Prod('S', 'AD'),
-            Prod('A', 'aA'),
-            Prod('A', 'B'),
-            Prod('B', 'SBD'),
-            Prod('B', 'CD'),
-            Prod('C', 'cC'),
-            Prod('C', 'AS'),
-            Prod('C', Grammar.EPSILON),
-            Prod('D', 'dD'),
-            Prod('D', Grammar.EPSILON)
+            Prod('S', ('A', 'b', 'B')),
+            Prod('S', ('A', 'D')),
+            Prod('A', ('a', 'A')),
+            Prod('A', ('B',)),
+            Prod('B', ('S', 'B', 'D')),
+            Prod('B', ('C', 'D')),
+            Prod('C', ('c', 'C')),
+            Prod('C', ('A', 'S')),
+            Prod('C', (Grammar.EPSILON,)),
+            Prod('D', ('d', 'D')),
+            Prod('D', (Grammar.EPSILON,))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -221,34 +221,34 @@ class TestGrammar(unittest.TestCase):
         exp_non_terminals = set([ "S'", 'S', 'A', 'B', 'C', 'D' ])
         exp_terminals = set('abcd')
         exp_productions = set([
-            Prod("S'", Grammar.EPSILON),
-            Prod("S'", 'S'),
-            Prod('S', 'b'),
-            Prod('S', 'D'),
-            Prod('S', 'A'),
-            Prod('S', 'bB'),
-            Prod('S', 'Ab'),
-            Prod('S', 'AbB'),
-            Prod('S', 'AD'),
-            Prod('A', 'a'),
-            Prod('A', 'aA'),
-            Prod('A', 'B'),
-            Prod('B', 'SB'),
-            Prod('B', 'S'),
-            Prod('B', 'SD'),
-            Prod('B', 'B'),
-            Prod('B', 'C'),
-            Prod('B', 'CD'),
-            Prod('B', 'D'),
-            Prod('B', 'SBD'),
-            Prod('B', 'BD'),
-            Prod('C', 'A'),
-            Prod('C', 'S'),
-            Prod('C', 'cC'),
-            Prod('C', 'AS'),
-            Prod('C', 'c'),
-            Prod('D', 'dD'),
-            Prod('D', 'd')
+            Prod("S'", (Grammar.EPSILON,)),
+            Prod("S'", ('S',)),
+            Prod('S', ('b',)),
+            Prod('S', ('D',)),
+            Prod('S', ('A',)),
+            Prod('S', ('b', 'B')),
+            Prod('S', ('A', 'b')),
+            Prod('S', ('A', 'b', 'B')),
+            Prod('S', ('A', 'D')),
+            Prod('A', ('a',)),
+            Prod('A', ('a', 'A')),
+            Prod('A', ('B',)),
+            Prod('B', ('S', 'B')),
+            Prod('B', ('S',)),
+            Prod('B', ('S', 'D')),
+            Prod('B', ('B',)),
+            Prod('B', ('C',)),
+            Prod('B', ('C', 'D')),
+            Prod('B', ('D',)),
+            Prod('B', ('S', 'B', 'D')),
+            Prod('B', ('B', 'D')),
+            Prod('C', ('A',)),
+            Prod('C', ('S',)),
+            Prod('C', ('c', 'C')),
+            Prod('C', ('A', 'S')),
+            Prod('C', ('c',)),
+            Prod('D', ('d', 'D')),
+            Prod('D', ('d',))
         ])
         exp_start = "S'"
         exp_grammar = Grammar(
@@ -257,15 +257,19 @@ class TestGrammar(unittest.TestCase):
             exp_productions,
             exp_start)
 
+        print(grammar)
+        print('================')
+        print(exp_grammar)
+
         self.assertEqual(grammar, exp_grammar)
 
     def test_remove_epsilon2(self):
         non_terminals = set('SA')
         terminals = set('a')
         productions = set([
-            Prod('S', 'aA'),
-            Prod('A', 'aA'),
-            Prod('A', 'a')
+            Prod('S', ('a', 'A')),
+            Prod('A', ('a', 'A')),
+            Prod('A', ('a',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -275,9 +279,9 @@ class TestGrammar(unittest.TestCase):
         exp_non_terminals = set('SA')
         exp_terminals = set('a')
         exp_productions = set([
-            Prod('S', 'aA'),
-            Prod('A', 'aA'),
-            Prod('A', 'a')
+            Prod('S', ('a', 'A')),
+            Prod('A', ('a', 'A')),
+            Prod('A', ('a',))
         ])
         exp_start = 'S'
         exp_grammar = Grammar(
@@ -292,17 +296,17 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SABCD')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'aS'),
-            Prod('S', 'BC'),
-            Prod('S', 'BD'),
-            Prod('A', 'cC'),
-            Prod('A', 'AB'),
-            Prod('B', 'bB'),
-            Prod('B', Grammar.EPSILON),
-            Prod('C', 'aA'),
-            Prod('C', 'BC'),
-            Prod('D', 'dDd'),
-            Prod('D', 'c')
+            Prod('S', ('a', 'S')),
+            Prod('S', ('B', 'C')),
+            Prod('S', ('B', 'D')),
+            Prod('A', ('c', 'C')),
+            Prod('A', ('A', 'B')),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,)),
+            Prod('C', ('a', 'A')),
+            Prod('C', ('B', 'C')),
+            Prod('D', ('d', 'D', 'd')),
+            Prod('D', ('c',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -316,19 +320,19 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SABCD')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'aSa'),
-            Prod('S', 'dDd'),
-            Prod('A', 'aB'),
-            Prod('A', 'Cc'),
-            Prod('A', 'a'),
-            Prod('B', 'dD'),
-            Prod('B', 'bB'),
-            Prod('B', 'b'),
-            Prod('C', 'Aa'),
-            Prod('C', 'dD'),
-            Prod('C', 'c'),
-            Prod('D', 'bbB'),
-            Prod('D', 'd')
+            Prod('S', ('a', 'S', 'a')),
+            Prod('S', ('d', 'D', 'd')),
+            Prod('A', ('a', 'B')),
+            Prod('A', ('C', 'c')),
+            Prod('A', ('a',)),
+            Prod('B', ('d', 'D')),
+            Prod('B', ('b', 'B')),
+            Prod('B', ('b',)),
+            Prod('C', ('A', 'a')),
+            Prod('C', ('d', 'D')),
+            Prod('C', ('c',)),
+            Prod('D', ('b', 'b', 'B')),
+            Prod('D', ('d',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -346,11 +350,11 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('A', 'BB'),
-            Prod('A', 'a'),
-            Prod('B', 'AB'),
-            Prod('B', 'b')
+            Prod('S', ('A', 'B')),
+            Prod('A', ('B', 'B')),
+            Prod('A', ('a',)),
+            Prod('B', ('A', 'B')),
+            Prod('B', ('b',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -363,10 +367,10 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('A', 'AB'),
-            Prod('B', 'BB'),
-            Prod('B', 'b')
+            Prod('S', ('A', 'B')),
+            Prod('A', ('A', 'B')),
+            Prod('B', ('B', 'B')),
+            Prod('B', ('b',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
@@ -379,10 +383,10 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('A', 'AB'),
-            Prod('B', 'BB'),
-            Prod('B', 'b')
+            Prod('S', ('A', 'B')),
+            Prod('A', ('A', 'B')),
+            Prod('B', ('B', 'B')),
+            Prod('B', ('b',))
         ])
         start = 'S'
         grammar0 = Grammar(non_terminals, terminals, productions, start)
@@ -394,10 +398,10 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('A', 'AB'),
-            Prod('B', 'BB'),
-            Prod('B', 'b')
+            Prod('S', ('A', 'B')),
+            Prod('A', ('A', 'B')),
+            Prod('B', ('B', 'B')),
+            Prod('B', ('b',))
         ])
         start = 'S'
         grammar0 = Grammar(non_terminals, terminals, productions, start)
@@ -413,38 +417,37 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('A', 'aA'),
-            Prod('A', Grammar.EPSILON),
-            Prod('B', 'bB'),
-            Prod('B', Grammar.EPSILON)
+            Prod('S', ('A', 'B')),
+            Prod('A', ('a', 'A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
 
-        result = grammar._closure(start)
-        expected = set('SAB')
+        result = grammar._closure()
+        expected = set([ (i,) for i in 'SAB' ])
 
         self.assertSetEqual(result, expected)
-
 
     def test_get_productions_by_non_terminal(self):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('A', 'aA'),
-            Prod('A', Grammar.EPSILON),
-            Prod('B', 'bB'),
-            Prod('B', Grammar.EPSILON)
+            Prod('S', ('A', 'B')),
+            Prod('A', ('a', 'A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
 
         exp_results = [
-            ('S', [ 'AB' ]),
-            ('A', [ 'aA', Grammar.EPSILON ]),
-            ('B', [ 'bB', Grammar.EPSILON ])
+            ('S', [ ('A', 'B') ]),
+            ('A', [ ('a', 'A'), (Grammar.EPSILON,) ]),
+            ('B', [ ('b', 'B'), (Grammar.EPSILON,) ])
         ]
 
         for n, p in exp_results:
@@ -457,11 +460,11 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('A', 'aA'),
-            Prod('A', Grammar.EPSILON),
-            Prod('B', 'bB'),
-            Prod('B', Grammar.EPSILON)
+            Prod('S', ('AB',)),
+            Prod('A', ('aA',)),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('bB',)),
+            Prod('B', (Grammar.EPSILON,))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)

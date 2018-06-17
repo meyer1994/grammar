@@ -64,7 +64,7 @@ class Grammar(object):
         Transforms the grammar into a epslon free grammar.
         '''
         # Ne
-        closure = self._closure(self.start)
+        closure = self._closure()
         self._remove_productions_with_symbol(Grammar.EPSILON)
 
         new_prods = set()
@@ -72,24 +72,24 @@ class Grammar(object):
             # Generate possible combinations of the epslon set symbols
             for comb in Grammar.epsilon_combinations(prod, closure):
                 new_prod = list(prod.p)
-                for c in comb:
-                    new_prod[c[0]] = ''
-                new_prod = (prod.n, ''.join(new_prod))
-                new_prods.add(new_prod)
+                for c, _ in comb:
+                    new_prod[c] = ''
+                new_prod = filter(lambda i: i != '', new_prod)
+                new_prods.add((prod.n, tuple(new_prod)))
 
         # Add created productions to grammar
         for non_terminal, production in new_prods:
             if production:
                 self.add_production(non_terminal, production)
 
-        if self.start not in closure:
+        if (self.start,) not in closure:
             return
 
         # S' -> S | epsilon
         new_start = self.start + "'"
         self.non_terminals.add(new_start)
-        self.add_production(new_start, self.start)
-        self.add_production(new_start, Grammar.EPSILON)
+        self.add_production(new_start, (self.start,))
+        self.add_production(new_start, (Grammar.EPSILON,))
         self.start = new_start
 
     def is_empty(self):
@@ -170,7 +170,7 @@ class Grammar(object):
         # Gets symbols and indexes
         epsilon_positions = []
         for i, item in enumerate(production):
-            if item in epsilon_set:
+            if (item,) in epsilon_set:
                 epsilon_positions.append((i, item))
 
         # All possible combinations
@@ -189,7 +189,7 @@ class Grammar(object):
         for prod in prods_to_remove:
             self.productions.discard(prod)
 
-    def _closure(self, start, symbol=EPSILON):
+    def _closure(self, symbol=EPSILON):
         '''
         Gets the non terminal symbols that derive EPSILON in 0 or more
         derivations
@@ -200,12 +200,13 @@ class Grammar(object):
             new_set = set()
 
             # (Ni-1 U epsilon)*
-            union = old_set | set(Grammar.EPSILON)
+            union = old_set | set([ (symbol,) ])
 
             for (non_term, prod) in self.productions:
+                prods = ( (i,) for i in prod )
                 # alpha contained in (Ni-1 U Vt)*
-                if set(prod) <= union:
-                    new_set.add(non_term)
+                if set(prods) <= union:
+                    new_set.add((non_term,))
 
             # Ni-1 U new_set
             new_set |= old_set
@@ -236,7 +237,8 @@ class Grammar(object):
             productions = self._get_productions_by_non_terminal(non_terminal)
             line = f'{non_terminal} ->'
             for p in productions:
-                line += f' {p} |'
+                prod = ''.join(p)
+                line += f' {prod} |'
             line = line[:-2]
             lines.append(line)
 
