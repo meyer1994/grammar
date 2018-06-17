@@ -197,6 +197,97 @@ class TestGrammar(unittest.TestCase):
 
         self.assertEqual(grammar, exp_grammar)
 
+    def test_remove_epsilon1(self):
+        non_terminals = set('SABCD')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', 'AbB'),
+            Prod('S', 'AD'),
+            Prod('A', 'aA'),
+            Prod('A', 'B'),
+            Prod('B', 'SBD'),
+            Prod('B', 'CD'),
+            Prod('C', 'cC'),
+            Prod('C', 'AS'),
+            Prod('C', Grammar.EPSILON),
+            Prod('D', 'dD'),
+            Prod('D', Grammar.EPSILON)
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        grammar.remove_epsilon()
+
+
+        exp_non_terminals = set([ "S'", 'S', 'A', 'B', 'C', 'D' ])
+        exp_terminals = set('abcd')
+        exp_productions = set([
+            Prod("S'", Grammar.EPSILON),
+            Prod("S'", 'S'),
+            Prod('S', 'b'),
+            Prod('S', 'D'),
+            Prod('S', 'A'),
+            Prod('S', 'bB'),
+            Prod('S', 'Ab'),
+            Prod('S', 'AbB'),
+            Prod('S', 'AD'),
+            Prod('A', 'a'),
+            Prod('A', 'aA'),
+            Prod('A', 'B'),
+            Prod('B', 'SB'),
+            Prod('B', 'S'),
+            Prod('B', 'SD'),
+            Prod('B', 'B'),
+            Prod('B', 'C'),
+            Prod('B', 'CD'),
+            Prod('B', 'D'),
+            Prod('B', 'SBD'),
+            Prod('B', 'BD'),
+            Prod('C', 'A'),
+            Prod('C', 'S'),
+            Prod('C', 'cC'),
+            Prod('C', 'AS'),
+            Prod('C', 'c'),
+            Prod('D', 'dD'),
+            Prod('D', 'd')
+        ])
+        exp_start = "S'"
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
+
+        self.assertEqual(grammar, exp_grammar)
+
+    def test_remove_epsilon2(self):
+        non_terminals = set('SA')
+        terminals = set('a')
+        productions = set([
+            Prod('S', 'aA'),
+            Prod('A', 'aA'),
+            Prod('A', 'a')
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        grammar.remove_epsilon()
+
+
+        exp_non_terminals = set('SA')
+        exp_terminals = set('a')
+        exp_productions = set([
+            Prod('S', 'aA'),
+            Prod('A', 'aA'),
+            Prod('A', 'a')
+        ])
+        exp_start = 'S'
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
+
+        self.assertEqual(grammar, exp_grammar)
+
     def test_productive(self):
         non_terminals = set('SABCD')
         terminals = set('abcd')
@@ -335,3 +426,51 @@ class TestGrammar(unittest.TestCase):
         expected = set('SAB')
 
         self.assertSetEqual(result, expected)
+
+
+    def test_get_productions_by_non_terminal(self):
+        non_terminals = set('SAB')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', 'AB'),
+            Prod('A', 'aA'),
+            Prod('A', Grammar.EPSILON),
+            Prod('B', 'bB'),
+            Prod('B', Grammar.EPSILON)
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        exp_results = [
+            ('S', [ 'AB' ]),
+            ('A', [ 'aA', Grammar.EPSILON ]),
+            ('B', [ 'bB', Grammar.EPSILON ])
+        ]
+
+        for n, p in exp_results:
+            res = grammar._get_productions_by_non_terminal(n)
+            res.sort()
+            p.sort()
+            self.assertListEqual(res, p)
+
+    def test_str(self):
+        non_terminals = set('SAB')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', 'AB'),
+            Prod('A', 'aA'),
+            Prod('A', Grammar.EPSILON),
+            Prod('B', 'bB'),
+            Prod('B', Grammar.EPSILON)
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        lines = set(str(grammar))
+        exp_lines = set(
+            f'''S -> AB
+            A -> aA | {Grammar.EPSILON}
+            B -> bB | {Grammar.EPSILON}'''
+        )
+
+        self.assertSetEqual(lines, exp_lines)
