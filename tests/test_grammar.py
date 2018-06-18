@@ -703,6 +703,106 @@ class TestGrammar(unittest.TestCase):
             expected_productions,
             expected_start)
         self.assertEqual(grammar, exp_grammar)
+
+    def test_first(self):
+        non_terminals = set('SAB')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', ('A','b')),
+            Prod('S', ('A','B','c')),
+            Prod('B', ('b','B')),
+            Prod('B', ('A','d')),
+            Prod('B', (Grammar.EPSILON,)),
+            Prod('A', ('a','A')),
+            Prod('A', (Grammar.EPSILON,)),
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        first, _ = grammar.first_and_follow()
+        exp_first = {
+            'a': {'a'},
+            'b': {'b'},
+            'c': {'c'},
+            'd': {'d'},
+            'S': {'a', 'b', 'c', 'd'},
+            'A': {'a', '&'},
+            'B': {'b', '&', 'a', 'd'}
+        }
+        self.assertDictEqual(first, exp_first)
+        # test 2
+        non_terminals = set('SABC')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', ('A','B','C')),
+            Prod('A', ('a','A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b','B')),
+            Prod('B', ('A','C','d')),
+            Prod('C', ('c','C')),
+            Prod('C', (Grammar.EPSILON,)),
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        first, _ = grammar.first_and_follow()
+        exp_first = {
+            'a': {'a'},
+            'b': {'b'},
+            'c': {'c'},
+            'd': {'d'},
+            'S': {'a', 'b', 'c', 'd'},
+            'A': {'a', '&'},
+            'B': {'b', 'c', 'a', 'd'},
+            'C': {'c', '&'}
+        }
+        self.assertDictEqual(first, exp_first)
+
+    def test_follow(self):
+        non_terminals = set('SABC')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', ('A','B','C')),
+            Prod('A', ('a','A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b','B')),
+            Prod('B', ('A','C','d')),
+            Prod('C', ('c','C')),
+            Prod('C', (Grammar.EPSILON,)),
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        _, follow = grammar.first_and_follow()
+        exp_follow = {
+            'S': {'$'},
+            'A': {'a', 'b', 'c', 'd'},
+            'B': {'c', '$'},
+            'C': {'d', '$'}
+        }
+        self.assertDictEqual(follow, exp_follow)
+        # test 2
+        non_terminals = set(['E', 'E1', 'T', 'T1', 'F'])
+        terminals = set('+*()')
+        terminals.add('id')
+        productions = set([
+            Prod('E', ('T','E1')),
+            Prod('E1', ('+','T','E1')),
+            Prod('E1', (Grammar.EPSILON,)),
+            Prod('T', ('F','T1')),
+            Prod('T1', ('*','F','T1')),
+            Prod('T1', (Grammar.EPSILON,)),
+            Prod('F', ('(','E',')')),
+            Prod('F', ('id',)),
+        ])
+        start = 'E'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        _, follow = grammar.first_and_follow()
+        exp_follow = {
+            'E': {'$', ')'},
+            'E1': {'$', ')'},
+            'T': {'$', '+', ')'},
+            'T1': {'$', '+', ')'},
+            'F': {'$', '+', ')', '*'}
+        }
+        self.assertDictEqual(follow, exp_follow)
     
     def test_has_indirect_left_recursion_true(self):
         non_terminals = set('SA')

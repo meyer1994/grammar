@@ -240,6 +240,50 @@ class Grammar(object):
 
         return old_set
 
+    def first_and_follow(self):
+        first = {i: set() for i in self.non_terminals}
+        first.update((i, {i}) for i in self.terminals)
+        follow = {i: set() for i in self.non_terminals}
+        follow[self.start].add('$')
+        epsilon = set()
+
+        while True:
+            updated = False
+
+            for nt, expression in self.productions:
+                for symbol in expression:
+                    if symbol == Grammar.EPSILON:
+                        updated |= self._union(epsilon, {nt})
+                        continue
+                    else:
+                        updated |= self._union(first[nt], first[symbol])
+                        if symbol not in epsilon:
+                            break
+                else:
+                    updated |= self._union(epsilon, {nt})
+
+                aux = follow[nt]
+                for symbol in reversed(expression):
+                    if symbol == Grammar.EPSILON:
+                        break
+                    if symbol in follow:
+                        updated |= self._union(follow[symbol], aux)
+                    if symbol in epsilon:
+                        aux = aux.union(first[symbol])
+                    else:
+                        aux = first[symbol]
+            
+            if not updated:
+                for nt in epsilon:
+                    first[nt].add(Grammar.EPSILON)
+                return first, follow
+                    
+
+    def _union(self, first, begins):
+        n = len(first)
+        first |= begins
+        return len(first) != n
+
     @staticmethod
     def epsilon_combinations(prod, epsilon_set):
         '''
