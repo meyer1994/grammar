@@ -192,8 +192,7 @@ class TestGrammar(unittest.TestCase):
             exp_productions,
             exp_start)
 
-        print(grammar.terminals)
-        print(exp_grammar.terminals)
+        print(grammar)
 
         self.assertEqual(grammar, exp_grammar)
 
@@ -375,7 +374,7 @@ class TestGrammar(unittest.TestCase):
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
 
-        result = grammar.reachable()
+        result = grammar.reachable(start)
         expected = set('SBDabd')
 
         self.assertSetEqual(result, expected)
@@ -416,6 +415,36 @@ class TestGrammar(unittest.TestCase):
         result = grammar.is_empty()
 
         self.assertTrue(result)
+
+    def test_is_finite_true(self):
+        non_terminals = set('SA')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', ('a',)),
+            Prod('S', ('A',)),
+            Prod('A', ('b',)),
+            Prod('A', ('S',))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        result = grammar.is_finite()
+
+        self.assertTrue(result)
+
+    def test_is_finite_false(self):
+        non_terminals = set('S')
+        terminals = set('a')
+        productions = set([
+            Prod('S', ('a', 'S')),
+            Prod('S', ('a',))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        result = grammar.is_finite()
+
+        self.assertFalse(result)
 
     def test_equal_true(self):
         non_terminals = set('SAB')
@@ -520,10 +549,10 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SAB')
         terminals = set('ab')
         productions = set([
-            Prod('S', ('AB',)),
-            Prod('A', ('aA',)),
+            Prod('S', ('A', 'B')),
+            Prod('A', ('a', 'A')),
             Prod('A', (Grammar.EPSILON,)),
-            Prod('B', ('bB',)),
+            Prod('B', ('b', 'B')),
             Prod('B', (Grammar.EPSILON,))
         ])
         start = 'S'

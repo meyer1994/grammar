@@ -46,7 +46,8 @@ class Grammar(object):
         '''
         Remove all unreachable symbols from the grammar.
         '''
-        unreachable = (self.terminals | self.non_terminals) - self.reachable()
+        unreachable = (self.terminals | self.non_terminals)
+        unreachable -= self.reachable(self.start)
         for symbol in unreachable:
             if symbol in self.terminals:
                 self.remove_terminal(symbol)
@@ -153,6 +154,35 @@ class Grammar(object):
         productive_symbols = self.productive()
         return self.start not in productive_symbols
 
+    def is_finite(self):
+        tmp_grammar = Grammar(
+            self.non_terminals.copy(),
+            self.terminals.copy(),
+            self.productions.copy(),
+            self.start)
+
+
+
+        # Proper
+        # tmp_grammar.remove_epsilon()
+        tmp_grammar.remove_useless()
+        # tmp_grammar.remove_simple()
+
+
+        visited = set([ tmp_grammar.start ])
+        stack = [ tmp_grammar.start ]
+        while len(stack) > 0:
+            item = stack.pop()
+            reachable = self.reachable(item) - tmp_grammar.terminals
+            reachable.discard(item)
+            if any(i in visited for i in reachable):
+                return True
+            for i in reachable:
+                stack.append(i)
+                visited.add(i)
+        return False
+
+
     def productive(self):
         '''
         Gets the set of productive symbols of the grammar.
@@ -180,19 +210,19 @@ class Grammar(object):
 
         return old_set
 
-    def reachable(self):
+    def reachable(self, symbol):
         '''
-        Gets the set of reachable symbols from the start symbol.
+        Gets the set of reachable symbols from the symbol.
         '''
         # (Vn U Vt)*
         union = self.non_terminals | self.terminals | set(Grammar.EPSILON)
 
-        old_set = set(self.start)
+        old_set = set(symbol)
         while True:
             # Ni
             new_set = set()
 
-            for (non_term, prod) in self.productions:
+            for non_term, prod in self.productions:
                 # A in Vi-1
                 if non_term not in old_set:
                     continue
@@ -291,7 +321,7 @@ class Grammar(object):
             productions = self._get_productions_by_non_terminal(non_terminal)
             line = f'{non_terminal} ->'
             for p in productions:
-                prod = ''.join(p)
+                prod = ' '.join(p)
                 line += f' {prod} |'
             line = line[:-2]
             lines.append(line)
