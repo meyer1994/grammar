@@ -292,6 +292,44 @@ class TestGrammar(unittest.TestCase):
 
         self.assertEqual(grammar, exp_grammar)
 
+    def test_remove_simple(self):
+        non_terminals = set('SFGH')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', ('F', 'G', 'H')),
+            Prod('F', ('G',)),
+            Prod('F', ('a',)),
+            Prod('G', ('d', 'G')),
+            Prod('G', ('H',)),
+            Prod('G', ('b',)),
+            Prod('H', ('c',))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        grammar.remove_simple()
+
+        exp_non_terminals = set('SFGH')
+        exp_terminals = set(grammar.terminals)
+        exp_productions = set([
+            Prod('S', ('F', 'G', 'H')),
+            Prod('F', ('a',)),
+            Prod('F', ('d', 'G')),
+            Prod('F', ('b',)),
+            Prod('F', ('c',)),
+            Prod('G', ('d', 'G')),
+            Prod('G', ('b',)),
+            Prod('G', ('c',)),
+            Prod('H', ('c',))
+        ])
+        exp_start = 'S'
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
+
+        self.assertEqual(grammar, exp_grammar)
+
     def test_productive(self):
         non_terminals = set('SABCD')
         terminals = set('abcd')
@@ -426,10 +464,32 @@ class TestGrammar(unittest.TestCase):
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
 
-        result = grammar._closure()
+        result = grammar._epsilon_closure()
         expected = set([ (i,) for i in 'SAB' ])
 
         self.assertSetEqual(result, expected)
+
+    def test_symbol_simple(self):
+        non_terminals = set('SFGH')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', ('F', 'G', 'H')),
+            Prod('F', ('G',)),
+            Prod('F', ('a',)),
+            Prod('G', ('d', 'G')),
+            Prod('G', ('H',)),
+            Prod('G', ('b',)),
+            Prod('H', ('c',))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+
+        result = [ grammar._symbol_simple(i) for i in 'SFGH' ]
+        expected = [ set('S'), set('FGH'), set('GH'), set('H')  ]
+
+        for i, _ in enumerate(result):
+            self.assertSetEqual(result[i], expected[i])
 
     def test_get_productions_by_non_terminal(self):
         non_terminals = set('SAB')
