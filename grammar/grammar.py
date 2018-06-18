@@ -1,5 +1,7 @@
 import re
 from itertools import combinations
+from collections import defaultdict
+from pprint import pprint
 
 from grammar.production import Prod
 
@@ -64,7 +66,7 @@ class Grammar(object):
         Transforms the grammar into a epslon free grammar.
         '''
         # Ne
-        closure = self._closure()
+        closure = self._epsilon_closure()
         self._remove_productions_with_symbol(Grammar.EPSILON)
 
         new_prods = set()
@@ -91,6 +93,58 @@ class Grammar(object):
         self.add_production(new_start, (self.start,))
         self.add_production(new_start, (Grammar.EPSILON,))
         self.start = new_start
+
+    def remove_simple(self):
+        '''
+        Remove simple productions from the grammar.
+        '''
+        simple_table = {}
+        for symbol in self.non_terminals:
+            simple_table[symbol] = self._symbol_simple(symbol)
+
+        self._remove_simple_productions()
+
+        for symbol, simple in simple_table.items():
+            for non_terminal in simple:
+                for prod in self._get_productions_by_non_terminal(non_terminal):
+                    self.add_production(symbol, prod)
+
+    def _remove_simple_productions(self):
+        '''
+        Remove all simple productions from the productions set.
+
+        It is done this way, by creating a separate set, because python throws
+        an error when changing the set size during iterations.
+        '''
+        to_remove = set()
+        for prod in self.productions:
+            if self._is_simple_prod(prod.p):
+                to_remove.add(prod)
+
+        for prod in to_remove:
+            self.productions.discard(prod)
+
+    def _symbol_simple(self, symbol):
+        '''
+        Gets the set of symbols that are derived only in simple productions.
+
+        A simple production is a production of the form:
+            { A -> B | A, B are non terminals }
+        '''
+        new_set = set([ symbol ])
+
+        for prod in self._get_productions_by_non_terminal(symbol):
+            if self._is_simple_prod(prod):
+                for i in self._symbol_simple(prod[0]):
+                    new_set.add(i)
+
+        return new_set
+
+    def _is_simple_prod(self, prod):
+        '''
+        Checks if some production is simple.
+        '''
+        return len(prod) == 1 and prod[0] in self.non_terminals
 
     def is_empty(self):
         '''
@@ -189,7 +243,7 @@ class Grammar(object):
         for prod in prods_to_remove:
             self.productions.discard(prod)
 
-    def _closure(self, symbol=EPSILON):
+    def _epsilon_closure(self):
         '''
         Gets the non terminal symbols that derive EPSILON in 0 or more
         derivations
@@ -200,7 +254,7 @@ class Grammar(object):
             new_set = set()
 
             # (Ni-1 U epsilon)*
-            union = old_set | set([ (symbol,) ])
+            union = old_set | set([ (Grammar.EPSILON,) ])
 
             for (non_term, prod) in self.productions:
                 prods = ( (i,) for i in prod )
