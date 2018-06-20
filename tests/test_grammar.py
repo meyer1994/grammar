@@ -566,101 +566,97 @@ class TestGrammar(unittest.TestCase):
         )
 
         self.assertSetEqual(lines, exp_lines)
+    
     def test_has_direct_left_recursion_true(self):
         non_terminals = set('S')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'Sa'),
-            Prod('S', 'b')
+            Prod('S', ('S','a')),
+            Prod('S', ('b',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        bool_response, left_recursive_symbols = grammar.has_direct_left_recursion()
-        self.assertTrue(bool_response)
+        left_recursive_symbols = grammar.has_direct_left_recursion()
         self.assertEqual(left_recursive_symbols, set('S'))
 
         non_terminals = set('ETF')
         terminals = set('+*()')
         terminals.add('id')
         productions = set([
-            Prod('E', 'E+T'),
-            Prod('E', 'T'),
-            Prod('T', 'T*F'),
-            Prod('T', 'F'),
-            Prod('F', '(E)'),
-            Prod('F', 'id')
+            Prod('E', ('E','+','T')),
+            Prod('E', ('T',)),
+            Prod('T', ('T','*','F')),
+            Prod('T', ('F',)),
+            Prod('F', ('(','E',')')),
+            Prod('F', ('id',))
         ])
         start = 'E'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        bool_response, left_recursive_symbols = grammar.has_direct_left_recursion()
-        self.assertTrue(bool_response)
+        left_recursive_symbols = grammar.has_direct_left_recursion()
         self.assertEqual(left_recursive_symbols, set('ET'))
 
     def test_has_direct_left_recursion_false(self):
         non_terminals = set('SABC')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'AB'),
-            Prod('S', 'BC'),
-            Prod('A', 'aA'),
-            Prod('A', Grammar.EPSILON),
-            Prod('B', 'bB'),
-            Prod('B', 'd'),
-            Prod('C', 'cC'),
-            Prod('C', 'c')
+            Prod('S', ('A','B')),
+            Prod('S', ('B','C')),
+            Prod('A', ('a','A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b','B')),
+            Prod('B', ('d',)),
+            Prod('C', ('c','C')),
+            Prod('C', ('c',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        bool_response, left_recursive_symbols = grammar.has_direct_left_recursion()
-        self.assertFalse(bool_response)
+        left_recursive_symbols = grammar.has_direct_left_recursion()
         self.assertEqual(left_recursive_symbols, set())
 
         non_terminals = set('SB')
         terminals = set('abd')
         productions = set([
-            Prod('S', 'aS'),
-            Prod('S', 'aB'),
-            Prod('S', 'dS'),
-            Prod('B', 'bB'),
-            Prod('B', 'b')
+            Prod('S', ('a','S')),
+            Prod('S', ('a','B')),
+            Prod('S', ('d','S')),
+            Prod('B', ('b','B')),
+            Prod('B', ('b',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        bool_response, left_recursive_symbols = grammar.has_direct_left_recursion()
-        self.assertFalse(bool_response)
+        left_recursive_symbols = grammar.has_direct_left_recursion()
         self.assertEqual(left_recursive_symbols, set())
 
         non_terminals = set('SA')
         terminals = set('ac')
         productions = set([
-            Prod('S', 'aS'),
-            Prod('S', 'A'),
-            Prod('A', 'aAc'),
-            Prod('A', Grammar.EPSILON)
+            Prod('S', ('a','S')),
+            Prod('S', ('A',)),
+            Prod('A', ('a','A','c')),
+            Prod('A', (Grammar.EPSILON,))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        bool_response, left_recursive_symbols = grammar.has_direct_left_recursion()
-        self.assertFalse(bool_response)
+        left_recursive_symbols = grammar.has_direct_left_recursion()
         self.assertEqual(left_recursive_symbols, set())
 
     def test_remove_direct_left_recursion(self):
         non_terminals = set('S')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'Sa'),
-            Prod('S', 'b')
+            Prod('S', ('S','a')),
+            Prod('S', ('b',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
         grammar.remove_direct_left_recursion('S')
         
-        expected_non_terminals = set(['S', "S'"])
+        expected_non_terminals = set(['S', 'S1'])
         expected_terminals = set('ab')
         expected_productions = set([
-            Prod('S', "bS'"),
-            Prod("S'", "aS'"),
-            Prod("S'", Grammar.EPSILON)
+            Prod('S', ('b','S1')),
+            Prod('S1', ('a','S1')),
+            Prod('S1', (Grammar.EPSILON,))
         ])
         expected_start = 'S'
         exp_grammar = Grammar(
@@ -674,31 +670,31 @@ class TestGrammar(unittest.TestCase):
         terminals = set('+*()')
         terminals.add('id')
         productions = set([
-            Prod('E', 'E+T'),
-            Prod('E', 'T'),
-            Prod('T', 'T*F'),
-            Prod('T', 'F'),
-            Prod('F', '(E)'),
-            Prod('F', 'id')
+            Prod('E', ('E','+','T')),
+            Prod('E', ('T',)),
+            Prod('T', ('T','*','F')),
+            Prod('T', ('F',)),
+            Prod('F', ('(','E',')')),
+            Prod('F', ('id',))
         ])
         start = 'E'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        left_recursive_symbols = grammar.has_direct_left_recursion()[1]
+        left_recursive_symbols = grammar.has_direct_left_recursion()
         for symbol in left_recursive_symbols:
             grammar.remove_direct_left_recursion(symbol)
 
-        expected_non_terminals = set(['E', "E'", 'T', "T'", 'F'])
+        expected_non_terminals = set(['E', 'E1', 'T', 'T1', 'F'])
         expected_terminals = set('+*()')
         expected_terminals.add('id')
         expected_productions = set([
-            Prod('E', "TE'"),
-            Prod("E'", "+TE'"),
-            Prod("E'", Grammar.EPSILON),
-            Prod('T', "FT'"),
-            Prod("T'", "*FT'"),
-            Prod("T'", Grammar.EPSILON),
-            Prod('F', '(E)'),
-            Prod('F', 'id')
+            Prod('E', ('T','E1')),
+            Prod('E1', ('+','T','E1')),
+            Prod('E1', (Grammar.EPSILON,)),
+            Prod('T', ('F','T1')),
+            Prod('T1', ('*','F','T1')),
+            Prod('T1', (Grammar.EPSILON,)),
+            Prod('F', ('(','E',')')),
+            Prod('F', ('id',))
         ])
         expected_start = 'E'
         exp_grammar = Grammar(
@@ -712,100 +708,96 @@ class TestGrammar(unittest.TestCase):
         non_terminals = set('SA')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'Aa'),
-            Prod('S', 'Sb'),
-            Prod('A', 'Sc'),
-            Prod('A', 'd')
+            Prod('S', ('A','a')),
+            Prod('S', ('S','b')),
+            Prod('A', ('S','c')),
+            Prod('A', ('d',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        has_indirect, symbols_with_indirect_recursion = grammar.has_indirect_left_recursion()
-        self.assertTrue(has_indirect)
+        symbols_with_indirect_recursion = grammar.has_indirect_left_recursion()
         self.assertEqual(symbols_with_indirect_recursion, set('SA'))
         #test 2
         non_terminals = set('SAB')
         terminals = set('abcde')
         productions = set([
-            Prod('S', 'aS'),
-            Prod('S', 'Ab'),
-            Prod('A', 'Ab'),
-            Prod('A', 'Bc'),
-            Prod('A', 'a'),
-            Prod('B', 'Bd'),
-            Prod('B', 'Sa'),
-            Prod('B', 'e')
+            Prod('S', ('a','S')),
+            Prod('S', ('A','b')),
+            Prod('A', ('A','b')),
+            Prod('A', ('B','c')),
+            Prod('A', ('a',)),
+            Prod('B', ('B','d')),
+            Prod('B', ('S','a')),
+            Prod('B', ('e',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        has_indirect, symbols_with_indirect_recursion = grammar.has_indirect_left_recursion()
-        self.assertTrue(has_indirect)
+        symbols_with_indirect_recursion = grammar.has_indirect_left_recursion()
         self.assertEqual(symbols_with_indirect_recursion, set('SAB'))
     
     def test_has_indirect_left_recursion_false(self):
         non_terminals = set('S')
         terminals = set('ab')
         productions = set([
-            Prod('S', 'Sa'),
-            Prod('S', 'b')
+            Prod('S', ('S','a')),
+            Prod('S', ('b',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        bool_response, left_recursive_symbols = grammar.has_indirect_left_recursion()
-        self.assertFalse(bool_response)
+        left_recursive_symbols = grammar.has_indirect_left_recursion()
         self.assertEqual(left_recursive_symbols, set())
 
         non_terminals = set('ETF')
         terminals = set('+*()')
         terminals.add('id')
         productions = set([
-            Prod('E', 'E+T'),
-            Prod('E', 'T'),
-            Prod('T', 'T*F'),
-            Prod('T', 'F'),
-            Prod('F', '(E)'),
-            Prod('F', 'id')
+            Prod('E', ('E','+','T')),
+            Prod('E', ('T',)),
+            Prod('T', ('T','*','F')),
+            Prod('T', ('F',)),
+            Prod('F', ('(','E',')')),
+            Prod('F', ('id',))
         ])
         start = 'E'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        bool_response, left_recursive_symbols = grammar.has_indirect_left_recursion()
-        self.assertFalse(bool_response)
+        left_recursive_symbols = grammar.has_indirect_left_recursion()
         self.assertEqual(left_recursive_symbols, set())
     
     def test_remove_left_recursion(self):
         non_terminals = set('SA')
         terminals = set('abcd')
         productions = set([
-            Prod('S', 'Aa'),
-            Prod('S', 'Sb'),
-            Prod('A', 'Sc'),
-            Prod('A', 'd')
+            Prod('S', ('A','a')),
+            Prod('S', ('S','b')),
+            Prod('A', ('S','c')),
+            Prod('A', ('d',))
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
         grammar.remove_left_recursion()
 
-        exp_non_terminals1 = set(['S', "S'", 'A', "A'"])
+        exp_non_terminals1 = set(['S', 'S1', 'A', 'A1'])
         exp_terminals1 = set('abcd')
         exp_productions1 = set([
-            Prod('S', "AaS'"),
-            Prod("S'", "bS'"),
-            Prod("S'", Grammar.EPSILON),
-            Prod('A', "dA'"),
-            Prod("A'", "aS'cA'"),
-            Prod("A'", Grammar.EPSILON),
+            Prod('S', ('A','a','S1')),
+            Prod('S1', ('b','S1')),
+            Prod('S1', (Grammar.EPSILON,)),
+            Prod('A', ('d','A1')),
+            Prod('A1', ('a','S1','c','A1')),
+            Prod('A1', (Grammar.EPSILON,))
         ])
         exp_start1 = 'S'
         exp1 = Grammar(exp_non_terminals1, exp_terminals1, exp_productions1, exp_start1)
 
-        exp_non_terminals2 = set(['S', "S'", 'A'])
+        exp_non_terminals2 = set(['S', 'S1', 'A'])
         exp_terminals2 = set('abcd')
         exp_productions2 = set([
-            Prod("S'", "caS'"),
-            Prod("S'", "bS'"),
-            Prod("S'", Grammar.EPSILON),
-            Prod('S', "daS'"),
-            Prod('A', 'Sc'),
-            Prod('A', 'd')
+            Prod('S1', ('c','a','S1')),
+            Prod('S1', ('b','S1')),
+            Prod('S1', (Grammar.EPSILON,)),
+            Prod('S', ('d','a','S1')),
+            Prod('A', ('S','c')),
+            Prod('A', ('d',))
         ])
         exp_start2 = 'S'
         exp2 = Grammar(exp_non_terminals2, exp_terminals2, exp_productions2, exp_start2)

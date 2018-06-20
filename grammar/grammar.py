@@ -307,12 +307,13 @@ class Grammar(object):
         Returns a list of the productions from the passed non terminal.
         '''
         return [ p for n, p in self.productions if n == non_terminal ]
+
     def has_direct_left_recursion(self):
         non_terminal_with_left_recursion = set()
         for prod in self.productions:
             if prod.n == prod.p[0]:
                 non_terminal_with_left_recursion.add(prod.n)
-        return len(non_terminal_with_left_recursion) > 0, non_terminal_with_left_recursion
+        return non_terminal_with_left_recursion
 
     def has_indirect_left_recursion(self):
         non_terminal_with_left_recursion = set()
@@ -321,6 +322,7 @@ class Grammar(object):
         # union = self.non_terminals | self.terminals | set(Grammar.EPSILON)
         for non_terminal_symbol in self.non_terminals:
             old_set = set()
+            # get all the non_terminal symbols that are in the most left side of the prod
             for (non_term, prod) in self.productions:
                 if non_term == non_terminal_symbol and prod[0] in self.non_terminals:
                     old_set.add(prod[0])
@@ -334,7 +336,7 @@ class Grammar(object):
                     if non_term not in old_set:
                         continue
 
-                    # B, beta type production
+                    # B.beta type production
                     if prod[0] in self.non_terminals:
                         new_set.add(prod[0])
 
@@ -349,37 +351,43 @@ class Grammar(object):
             if non_terminal_symbol in old_set:
                 non_terminal_with_left_recursion.add(non_terminal_symbol)
         
-        return len(non_terminal_with_left_recursion) > 0, non_terminal_with_left_recursion
+        return non_terminal_with_left_recursion
 
     def has_left_recursion(self):
-        direct = self.has_direct_left_recursion()[0]
-        indirect = self.has_indirect_left_recursion()[0]
+        direct = self.has_direct_left_recursion()
+        indirect = self.has_indirect_left_recursion()
         return direct or indirect
 
     def remove_direct_left_recursion(self, symbol):
         prods_to_add = []
         prods_to_remove = []
-
+        count = 1
         for prod in self.productions:
             if prod.n == symbol:
+                while True:
+                    if (symbol + str(count)) in self.non_terminals:
+                        count += 1
+                    else:
+                        break
+
                 if prod.p[0] == symbol:
-                    prods_to_add.append(Prod(symbol + "'", prod.p[1:] + symbol + "'"))
+                    prods_to_add.append(Prod(symbol + str(count), prod.p[1:] + (symbol + str(count),) ))
                     prods_to_remove.append(prod)
                 else:
-                    prods_to_add.append(Prod(symbol, prod.p + symbol + "'"))
+                    prods_to_add.append(Prod(symbol, prod.p + (symbol + str(count),) ))
                     prods_to_remove.append(prod)
             else:
                 continue
 
-        self.non_terminals.add(symbol + "'")
-        self.productions.add(Prod(symbol + "'", Grammar.EPSILON))
+        self.non_terminals.add(symbol + str(count))
+        self.productions.add(Prod(symbol + str(count), (Grammar.EPSILON,)))
         for prod in prods_to_remove:
             self.productions.discard(prod)
         for prod in prods_to_add:
             self.productions.add(prod)
     
     def remove_left_recursion(self):
-        symbols_with_direct_left_recursion = self.has_direct_left_recursion()[1]
+        symbols_with_direct_left_recursion = self.has_direct_left_recursion()
         #order vn
         ordered_vn = dict(zip(range(len(self.non_terminals)), self.non_terminals))
         for i in range(len(ordered_vn)):
