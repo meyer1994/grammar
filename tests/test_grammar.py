@@ -803,7 +803,62 @@ class TestGrammar(unittest.TestCase):
             'F': {'$', '+', ')', '*'}
         }
         self.assertDictEqual(follow, exp_follow)
-    
+        # test 3
+        non_terminals = set('SACDEF')
+        terminals = set('abcdefg')
+        productions = set([
+            Prod('S', ('A','b','C','D')),
+            Prod('S', ('E','F'  )),
+            Prod('A', ('a','A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('C', ('E','C','F')),
+            Prod('C', ('c',)),
+            Prod('D', ('C','D')),
+            Prod('D', ('d','D','d')),
+            Prod('D', (Grammar.EPSILON,)),
+            Prod('E', ('e','E')),
+            Prod('E', (Grammar.EPSILON,)),
+            Prod('F', ('F','S')),
+            Prod('F', ('f','F')),
+            Prod('F', ('g',))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        _, follow = grammar.first_and_follow()
+        exp_follow = {
+            'S': {'$', 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+            'A': {'b'},
+            'C': {'$', 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+            'D': {'$', 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
+            'E': {'f', 'g', 'c', 'e'},
+            'F': {'$', 'a', 'b', 'c', 'd', 'e', 'f', 'g'}
+        }
+        self.assertDictEqual(follow, exp_follow)
+        # test 4
+        non_terminals = set('SABC')
+        terminals = set('abce')
+        productions = set([
+            Prod('S', ('A','C')),
+            Prod('S', ('C','e','B')),
+            Prod('S', ('B','a')),
+            Prod('A', ('B','C')),
+            Prod('A', ('a','A')),
+            Prod('C', ('c','C')),
+            Prod('C', (Grammar.EPSILON,)),
+            Prod('B', ('b','B')),
+            Prod('B', (Grammar.EPSILON,)),
+            Prod('B', ('A','B'))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        _, follow = grammar.first_and_follow()
+        exp_follow = {
+            'S': {'$'},
+            'A': {'a', 'b', 'c', '$'},
+            'B': {'c', '$', 'a', 'b'},
+            'C': {'e', '$', 'a', 'b', 'c'}
+        }
+        self.assertDictEqual(follow, exp_follow)    
     def test_has_indirect_left_recursion_true(self):
         non_terminals = set('SA')
         terminals = set('abcd')
