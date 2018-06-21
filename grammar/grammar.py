@@ -365,22 +365,20 @@ class Grammar(object):
         for prod in self.productions:
             if prod.n == symbol:
                 while True:
-                    if (symbol + str(count)) in self.non_terminals:
+                    if (symbol[0] + str(count)) in self.non_terminals:
                         count += 1
                     else:
                         break
 
                 if prod.p[0] == symbol:
-                    prods_to_add.append(Prod(symbol + str(count), prod.p[1:] + (symbol + str(count),) ))
+                    prods_to_add.append(Prod(symbol[0] + str(count), prod.p[1:] + (symbol[0] + str(count),) ))
                     prods_to_remove.append(prod)
                 else:
-                    prods_to_add.append(Prod(symbol, prod.p + (symbol + str(count),) ))
+                    prods_to_add.append(Prod(symbol, prod.p + (symbol[0] + str(count),) ))
                     prods_to_remove.append(prod)
-            else:
-                continue
 
-        self.non_terminals.add(symbol + str(count))
-        self.productions.add(Prod(symbol + str(count), (Grammar.EPSILON,)))
+        self.non_terminals.add(symbol[0] + str(count))
+        self.productions.add(Prod(symbol[0] + str(count), (Grammar.EPSILON,)))
         for prod in prods_to_remove:
             self.productions.discard(prod)
         for prod in prods_to_add:

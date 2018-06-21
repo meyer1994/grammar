@@ -804,3 +804,55 @@ class TestGrammar(unittest.TestCase):
 
         exp_answers = [exp1, exp2]
         self.assertIn(grammar, exp_answers)
+
+    def test_remove_direct_left_recursion2(self):
+        non_terminals = set(['S1'])
+        terminals = set('ab')
+        productions = set([
+            Prod('S1', ('S1','a')),
+            Prod('S1', ('b',))
+        ])
+        start = 'S1'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        grammar.remove_direct_left_recursion('S1')
+
+        expected_non_terminals = set(['S1', 'S2'])
+        expected_terminals = set('ab')
+        expected_productions = set([
+            Prod('S1', ('b','S2')),
+            Prod('S2', ('a','S2')),
+            Prod('S2', (Grammar.EPSILON,))
+        ])
+        expected_start = 'S1'
+        exp_grammar = Grammar(
+            expected_non_terminals,
+            expected_terminals,
+            expected_productions,
+            expected_start)
+        self.assertEqual(grammar, exp_grammar)
+    
+    def test_has_left_recursion_true(self):
+        non_terminals = set('S')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', ('S','a')),
+            Prod('S', ('b',))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        self.assertTrue(grammar.has_left_recursion())
+    
+    def test_has_left_recursion_false(self):
+        non_terminals = set(['S', 'S1', 'A'])
+        terminals = set('abcd')
+        productions = set([
+            Prod('S1', ('c','a','S1')),
+            Prod('S1', ('b','S1')),
+            Prod('S1', (Grammar.EPSILON,)),
+            Prod('S', ('d','a','S1')),
+            Prod('A', ('S','c')),
+            Prod('A', ('d',))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        self.assertFalse(grammar.has_left_recursion())
