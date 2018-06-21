@@ -245,6 +245,7 @@ class Grammar(object):
         first.update((i, {i}) for i in self.terminals)
         follow = {i: set() for i in self.non_terminals}
         follow[self.start].add('$')
+        first_NT = {i: set() for i in self.non_terminals}
         epsilon = set()
 
         while True:
@@ -256,7 +257,12 @@ class Grammar(object):
                         updated |= self._union(epsilon, {nt})
                         continue
                     else:
+                        # FIRST
                         updated |= self._union(first[nt], first[symbol])
+                        # FIRST_NT
+                        if symbol in first_NT:
+                            updated |= self._union(first_NT[nt], {symbol})
+                            updated |= self._union(first_NT[nt], first_NT[symbol])
                         if symbol not in epsilon:
                             break
                 else:
@@ -276,7 +282,7 @@ class Grammar(object):
             if not updated:
                 for nt in epsilon:
                     first[nt].add(Grammar.EPSILON)
-                return first, follow
+                return first, follow, first_NT
                     
 
     def _union(self, first, begins):

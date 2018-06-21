@@ -718,7 +718,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        first, _ = grammar.first_and_follow()
+        first, _, _= grammar.first_and_follow()
         exp_first = {
             'a': {'a'},
             'b': {'b'},
@@ -743,7 +743,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        first, _ = grammar.first_and_follow()
+        first, _, _ = grammar.first_and_follow()
         exp_first = {
             'a': {'a'},
             'b': {'b'},
@@ -770,7 +770,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, follow = grammar.first_and_follow()
+        _, follow, _ = grammar.first_and_follow()
         exp_follow = {
             'S': {'$'},
             'A': {'a', 'b', 'c', 'd'},
@@ -794,7 +794,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'E'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, follow = grammar.first_and_follow()
+        _, follow, _ = grammar.first_and_follow()
         exp_follow = {
             'E': {'$', ')'},
             'E1': {'$', ')'},
@@ -824,7 +824,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, follow = grammar.first_and_follow()
+        _, follow, _ = grammar.first_and_follow()
         exp_follow = {
             'S': {'$', 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
             'A': {'b'},
@@ -851,7 +851,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, follow = grammar.first_and_follow()
+        _, follow, _ = grammar.first_and_follow()
         exp_follow = {
             'S': {'$'},
             'A': {'a', 'b', 'c', '$'},
@@ -1011,3 +1011,26 @@ class TestGrammar(unittest.TestCase):
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
         self.assertFalse(grammar.has_left_recursion())
+
+    def test_first_NT(self):
+        non_terminals = set('SABC')
+        terminals = set('abcd')
+        productions = set([
+            Prod('S', ('A','B','C')),
+            Prod('A', ('a','A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b','B')),
+            Prod('B', ('A','C','d')),
+            Prod('C', ('c','C')),
+            Prod('C', (Grammar.EPSILON,)),
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        _, _, first_NT = grammar.first_and_follow() 
+        exp_first_NT = {
+            'S': {'A', 'B', 'C'},
+            'A': set(),
+            'B': {'A', 'C'},
+            'C': set()
+        }
+        self.assertDictEqual(first_NT, exp_first_NT) 
