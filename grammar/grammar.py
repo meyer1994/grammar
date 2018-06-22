@@ -110,42 +110,56 @@ class Grammar(object):
                 for prod in self._get_productions_by_non_terminal(non_terminal):
                     self.add_production(symbol, prod)
 
-    def _remove_simple_productions(self):
-        '''
-        Remove all simple productions from the productions set.
-
-        It is done this way, by creating a separate set, because python throws
-        an error when changing the set size during iterations.
-        '''
-        to_remove = set()
+    def remove_direct_left_recursion(self, symbol):
+        prods_to_add = []
+        prods_to_remove = []
+        count = 1
         for prod in self.productions:
-            if self._is_simple_prod(prod.p):
-                to_remove.add(prod)
+            if prod.n == symbol:
+                while True:
+                    if (symbol[0] + str(count)) in self.non_terminals:
+                        count += 1
+                    else:
+                        break
 
-        for prod in to_remove:
+                if prod.p[0] == symbol:
+                    prods_to_add.append(Prod(symbol[0] + str(count), prod.p[1:] + (symbol[0] + str(count),) ))
+                    prods_to_remove.append(prod)
+                else:
+                    prods_to_add.append(Prod(symbol, prod.p + (symbol[0] + str(count),) ))
+                    prods_to_remove.append(prod)
+
+        self.non_terminals.add(symbol[0] + str(count))
+        self.productions.add(Prod(symbol[0] + str(count), (Grammar.EPSILON,)))
+        for prod in prods_to_remove:
             self.productions.discard(prod)
+        for prod in prods_to_add:
+            self.productions.add(prod)
 
-    def _symbol_simple(self, symbol):
-        '''
-        Gets the set of symbols that are derived only in simple productions.
+    def remove_left_recursion(self):
+        symbols_with_direct_left_recursion = self.has_direct_left_recursion()
+        #order vn
+        ordered_vn = dict(zip(range(len(self.non_terminals)), self.non_terminals))
+        for i in range(len(ordered_vn)):
+            for j in range(0, i):
+                prods_to_remove = []
+                prods_to_add = []
+                for prod in self.productions:
+                    if prod.n == ordered_vn[i] and prod.p[0] == ordered_vn[j]:
+                        prods_to_remove.append(prod)
+                        for (vn, production) in self.productions:
+                            if vn == ordered_vn[j]:
+                                prods_to_add.append(Prod(ordered_vn[i], production + prod.p[1:]))
 
-        A simple production is a production of the form:
-            { A -> B | A, B are non terminals }
-        '''
-        new_set = set([ symbol ])
+                for prod in prods_to_remove:
+                    self.productions.discard(prod)
+                for prod in prods_to_add:
+                    self.productions.add(prod)
+                    if prod.n == prod.p[0]:
+                        symbols_with_direct_left_recursion.add(prod.n)
 
-        for prod in self._get_productions_by_non_terminal(symbol):
-            if self._is_simple_prod(prod):
-                for i in self._symbol_simple(prod[0]):
-                    new_set.add(i)
-
-        return new_set
-
-    def _is_simple_prod(self, prod):
-        '''
-        Checks if some production is simple.
-        '''
-        return len(prod) == 1 and prod[0] in self.non_terminals
+            if ordered_vn[i] in symbols_with_direct_left_recursion:
+                self.remove_direct_left_recursion(ordered_vn[i])
 
     def is_empty(self):
         '''
@@ -182,6 +196,18 @@ class Grammar(object):
                 visited.add(i)
         return False
 
+    def is_factored(self):
+        '''
+        Checks if the grammar is factored or not
+        '''
+        for non_terminal in self.non_terminals:
+            productions = self._get_productions_by_non_terminal(non_terminal)
+            visited = set()
+            for production in productions:
+                if production[0] in visited:
+                    return False
+                visited.add(production[0])
+        return True
 
     def productive(self):
         '''
@@ -278,12 +304,61 @@ class Grammar(object):
                         aux = aux.union(first[symbol])
                     else:
                         aux = first[symbol]
-            
+
             if not updated:
                 for nt in epsilon:
                     first[nt].add(Grammar.EPSILON)
                 return first, follow, first_NT
-                    
+
+    def has_direct_left_recursion(self):
+        non_terminal_with_left_recursion = set()
+        for prod in self.productions:
+            if prod.n == prod.p[0]:
+                non_terminal_with_left_recursion.add(prod.n)
+        return non_terminal_with_left_recursion
+
+    def has_indirect_left_recursion(self):
+        non_terminal_with_left_recursion = set()
+        # Gramatica tem que ser propria?
+        # (Vn U Vt)*
+        # union = self.non_terminals | self.terminals | set(Grammar.EPSILON)
+        for non_terminal_symbol in self.non_terminals:
+            old_set = set()
+            # get all the non_terminal symbols that are in the most left side of the prod
+            for (non_term, prod) in self.productions:
+                if non_term == non_terminal_symbol and prod[0] in self.non_terminals:
+                    old_set.add(prod[0])
+            old_set.discard(non_terminal_symbol)
+            while True:
+                # Ni
+                new_set = set()
+
+                for (non_term, prod) in self.productions:
+                    # A in Vi-1
+                    if non_term not in old_set:
+                        continue
+
+                    # B.beta type production
+                    if prod[0] in self.non_terminals:
+                        new_set.add(prod[0])
+
+                # Ni-1 U new_set
+                new_set |= old_set
+
+                if new_set == old_set:
+                    break
+
+                old_set = new_set
+
+            if non_terminal_symbol in old_set:
+                non_terminal_with_left_recursion.add(non_terminal_symbol)
+
+        return non_terminal_with_left_recursion
+
+    def has_left_recursion(self):
+        direct = self.has_direct_left_recursion()
+        indirect = self.has_indirect_left_recursion()
+        return direct or indirect
 
     def _union(self, first, begins):
         n = len(first)
@@ -358,106 +433,42 @@ class Grammar(object):
         '''
         return [ p for n, p in self.productions if n == non_terminal ]
 
-    def has_direct_left_recursion(self):
-        non_terminal_with_left_recursion = set()
+    def _remove_simple_productions(self):
+        '''
+        Remove all simple productions from the productions set.
+
+        It is done this way, by creating a separate set, because python throws
+        an error when changing the set size during iterations.
+        '''
+        to_remove = set()
         for prod in self.productions:
-            if prod.n == prod.p[0]:
-                non_terminal_with_left_recursion.add(prod.n)
-        return non_terminal_with_left_recursion
+            if self._is_simple_prod(prod.p):
+                to_remove.add(prod)
 
-    def has_indirect_left_recursion(self):
-        non_terminal_with_left_recursion = set()
-        # Gramatica tem que ser propria?
-        # (Vn U Vt)*
-        # union = self.non_terminals | self.terminals | set(Grammar.EPSILON)
-        for non_terminal_symbol in self.non_terminals:
-            old_set = set()
-            # get all the non_terminal symbols that are in the most left side of the prod
-            for (non_term, prod) in self.productions:
-                if non_term == non_terminal_symbol and prod[0] in self.non_terminals:
-                    old_set.add(prod[0])
-            old_set.discard(non_terminal_symbol)
-            while True:
-                # Ni
-                new_set = set()
-
-                for (non_term, prod) in self.productions:
-                    # A in Vi-1
-                    if non_term not in old_set:
-                        continue
-
-                    # B.beta type production
-                    if prod[0] in self.non_terminals:
-                        new_set.add(prod[0])
-
-                # Ni-1 U new_set
-                new_set |= old_set
-
-                if new_set == old_set:
-                    break
-
-                old_set = new_set
-
-            if non_terminal_symbol in old_set:
-                non_terminal_with_left_recursion.add(non_terminal_symbol)
-        
-        return non_terminal_with_left_recursion
-
-    def has_left_recursion(self):
-        direct = self.has_direct_left_recursion()
-        indirect = self.has_indirect_left_recursion()
-        return direct or indirect
-
-    def remove_direct_left_recursion(self, symbol):
-        prods_to_add = []
-        prods_to_remove = []
-        count = 1
-        for prod in self.productions:
-            if prod.n == symbol:
-                while True:
-                    if (symbol[0] + str(count)) in self.non_terminals:
-                        count += 1
-                    else:
-                        break
-
-                if prod.p[0] == symbol:
-                    prods_to_add.append(Prod(symbol[0] + str(count), prod.p[1:] + (symbol[0] + str(count),) ))
-                    prods_to_remove.append(prod)
-                else:
-                    prods_to_add.append(Prod(symbol, prod.p + (symbol[0] + str(count),) ))
-                    prods_to_remove.append(prod)
-
-        self.non_terminals.add(symbol[0] + str(count))
-        self.productions.add(Prod(symbol[0] + str(count), (Grammar.EPSILON,)))
-        for prod in prods_to_remove:
+        for prod in to_remove:
             self.productions.discard(prod)
-        for prod in prods_to_add:
-            self.productions.add(prod)
-    
-    def remove_left_recursion(self):
-        symbols_with_direct_left_recursion = self.has_direct_left_recursion()
-        #order vn
-        ordered_vn = dict(zip(range(len(self.non_terminals)), self.non_terminals))
-        for i in range(len(ordered_vn)):
-            for j in range(0, i):
-                prods_to_remove = []
-                prods_to_add = []
-                for prod in self.productions:
-                    if prod.n == ordered_vn[i] and prod.p[0] == ordered_vn[j]:
-                        prods_to_remove.append(prod)
-                        for (vn, production) in self.productions:
-                            if vn == ordered_vn[j]:
-                                prods_to_add.append(Prod(ordered_vn[i], production + prod.p[1:]))
 
-                for prod in prods_to_remove:
-                    self.productions.discard(prod)
-                for prod in prods_to_add:
-                    self.productions.add(prod)
-                    if prod.n == prod.p[0]:
-                        symbols_with_direct_left_recursion.add(prod.n)
+    def _symbol_simple(self, symbol):
+        '''
+        Gets the set of symbols that are derived only in simple productions.
 
-            if ordered_vn[i] in symbols_with_direct_left_recursion:
-                self.remove_direct_left_recursion(ordered_vn[i])
+        A simple production is a production of the form:
+            { A -> B | A, B are non terminals }
+        '''
+        new_set = set([ symbol ])
+
+        for prod in self._get_productions_by_non_terminal(symbol):
+            if self._is_simple_prod(prod):
+                for i in self._symbol_simple(prod[0]):
+                    new_set.add(i)
+
+        return new_set
+
+    def _is_simple_prod(self, prod):
+        '''
+        Checks if some production is simple.
+        '''
+        return len(prod) == 1 and prod[0] in self.non_terminals
 
     def __eq__(self, other):
         vnt = self.non_terminals == other.non_terminals
