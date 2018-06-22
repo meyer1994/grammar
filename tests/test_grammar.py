@@ -566,7 +566,7 @@ class TestGrammar(unittest.TestCase):
         )
 
         self.assertSetEqual(lines, exp_lines)
-    
+
     def test_has_direct_left_recursion_true(self):
         non_terminals = set('S')
         terminals = set('ab')
@@ -650,7 +650,7 @@ class TestGrammar(unittest.TestCase):
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
         grammar.remove_direct_left_recursion('S')
-        
+
         expected_non_terminals = set(['S', 'S1'])
         expected_terminals = set('ab')
         expected_productions = set([
@@ -858,7 +858,8 @@ class TestGrammar(unittest.TestCase):
             'B': {'c', '$', 'a', 'b'},
             'C': {'e', '$', 'a', 'b', 'c'}
         }
-        self.assertDictEqual(follow, exp_follow)    
+        self.assertDictEqual(follow, exp_follow)
+
     def test_has_indirect_left_recursion_true(self):
         non_terminals = set('SA')
         terminals = set('abcd')
@@ -889,7 +890,7 @@ class TestGrammar(unittest.TestCase):
         grammar = Grammar(non_terminals, terminals, productions, start)
         symbols_with_indirect_recursion = grammar.has_indirect_left_recursion()
         self.assertEqual(symbols_with_indirect_recursion, set('SAB'))
-    
+
     def test_has_indirect_left_recursion_false(self):
         non_terminals = set('S')
         terminals = set('ab')
@@ -917,7 +918,7 @@ class TestGrammar(unittest.TestCase):
         grammar = Grammar(non_terminals, terminals, productions, start)
         left_recursive_symbols = grammar.has_indirect_left_recursion()
         self.assertEqual(left_recursive_symbols, set())
-    
+
     def test_remove_left_recursion(self):
         non_terminals = set('SA')
         terminals = set('abcd')
@@ -985,7 +986,7 @@ class TestGrammar(unittest.TestCase):
             expected_productions,
             expected_start)
         self.assertEqual(grammar, exp_grammar)
-    
+
     def test_has_left_recursion_true(self):
         non_terminals = set('S')
         terminals = set('ab')
@@ -996,7 +997,7 @@ class TestGrammar(unittest.TestCase):
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
         self.assertTrue(grammar.has_left_recursion())
-    
+
     def test_has_left_recursion_false(self):
         non_terminals = set(['S', 'S1', 'A'])
         terminals = set('abcd')
@@ -1026,11 +1027,41 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, _, first_NT = grammar.first_and_follow() 
+        _, _, first_NT = grammar.first_and_follow()
         exp_first_NT = {
             'S': {'A', 'B', 'C'},
             'A': set(),
             'B': {'A', 'C'},
             'C': set()
         }
-        self.assertDictEqual(first_NT, exp_first_NT) 
+        self.assertDictEqual(first_NT, exp_first_NT)
+
+    def test_is_factored_true(self):
+        non_terminals = set([ 'S', 'S0', 'B', 'B0' ])
+        terminals = set('ab')
+        productions = set([
+            Prod('S', ('a','S0')),
+            Prod('S', ('d','S')),
+            Prod('S0', ('B')),
+            Prod('S0', ('S')),
+            Prod('B', ('b','B0')),
+            Prod('B0', ('B',)),
+            Prod('B0', (Grammar.EPSILON,)),
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        self.assertTrue(grammar.is_factored())
+
+    def test_is_factored_false(self):
+        non_terminals = set('SB')
+        terminals = set('ab')
+        productions = set([
+            Prod('S', ('a','S')),
+            Prod('S', ('a','B')),
+            Prod('S', ('d','S')),
+            Prod('B', ('b','B')),
+            Prod('B', ('b',))
+        ])
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+        self.assertFalse(grammar.is_factored())
