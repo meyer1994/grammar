@@ -195,8 +195,6 @@ class TestGrammar(unittest.TestCase):
             exp_productions,
             exp_start)
 
-        print(grammar)
-
         self.assertEqual(grammar, exp_grammar)
 
     def test_remove_epsilon1(self):
@@ -258,10 +256,6 @@ class TestGrammar(unittest.TestCase):
             exp_terminals,
             exp_productions,
             exp_start)
-
-        print(grammar)
-        print('================')
-        print(exp_grammar)
 
         self.assertEqual(grammar, exp_grammar)
 
@@ -1018,51 +1012,3 @@ class TestGrammar(unittest.TestCase):
             'C': set()
         }
         self.assertDictEqual(first_NT, exp_first_NT)
-
-    def test_is_factored_true(self):
-        non_terminals = set([ 'S', 'S0', 'B', 'B0' ])
-        terminals = set('abd')
-        productions = set([
-            Prod('S', ('a','S0')),
-            Prod('S', ('d','S')),
-            Prod('S0', ('B')),
-            Prod('S0', ('S')),
-            Prod('B', ('b','B0')),
-            Prod('B0', ('B',)),
-            Prod('B0', (Grammar.EPSILON,)),
-        ])
-        start = 'S'
-        grammar = Grammar(non_terminals, terminals, productions, start)
-        self.assertTrue(grammar.is_factored())
-
-    def test_is_factored_false(self):
-        non_terminals = set('SB')
-        terminals = set('abd')
-        productions = set([
-            Prod('S', ('a','S')),
-            Prod('S', ('a','B')),
-            Prod('S', ('d','S')),
-            Prod('B', ('b','B')),
-            Prod('B', ('b',))
-        ])
-        start = 'S'
-        grammar = Grammar(non_terminals, terminals, productions, start)
-        self.assertFalse(grammar.is_factored())
-
-    # def test_factor(self):
-    #     non_terminals = set('SABC')
-    #     terminals = set('abcd')
-    #     productions = set([
-    #         Prod('S', ('B', 'C')),
-    #         Prod('S', ('A', 'B')),
-    #         Prod('A', ('a', 'A')),
-    #         Prod('A', (Grammar.EPSILON,)),
-    #         Prod('B', ('b', 'B')),
-    #         Prod('B', ('d',)),
-    #         Prod('C', ('c', 'C')),
-    #         Prod('C', ('c',))
-    #     ])
-    #     start = 'S'
-    #     grammar = Grammar(non_terminals, terminals, productions, start)
-    #     grammar.factor()
-    #     self.assertTrue(0)
