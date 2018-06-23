@@ -109,7 +109,7 @@ class Grammar(object):
 
         for symbol, simple in simple_table.items():
             for non_terminal in simple:
-                for prod in self._get_productions_by_non_terminal(non_terminal):
+                for prod in self[non_terminal]:
                     self.add_production(symbol, prod)
 
     def remove_direct_left_recursion(self, symbol):
@@ -202,14 +202,36 @@ class Grammar(object):
         '''
         Checks if the grammar is factored or not
         '''
+        first = self.first_sets()
         for non_terminal in self.non_terminals:
-            productions = self._get_productions_by_non_terminal(non_terminal)
+            productions = self[non_terminal]
             visited = set()
-            for production in productions:
-                if production[0] in visited:
-                    return False
-                visited.add(production[0])
+            for prod in productions:
+                for symbol in prod:
+                    if symbol == Grammar.EPSILON:
+                        continue
+                    if symbol in visited:
+                        return False
+                    if Grammar.EPSILON not in first[symbol]:
+                        visited.add(symbol)
+
         return True
+
+    def factor(self, steps=1):
+        grammar = Grammar(
+            self.non_terminals.copy(),
+            self.terminals.copy(),
+            self.productions.copy(),
+            self.start)
+
+    def _get_factors(self):
+        to_factor = defaultdict(set)
+        for non_terminal in self.non_terminals:
+            prods = self[non_terminal]
+            factorable = { p for p in prods if p[0] in self.non_terminals }
+            if len(factorable) > 1:
+                to_factor[non_terminal] |= factorable
+        return dict(to_factor)
 
     def productive(self):
         '''
@@ -511,12 +533,6 @@ class Grammar(object):
 
         return old_set
 
-    def _get_productions_by_non_terminal(self, non_terminal):
-        '''
-        Returns a list of the productions from the passed non terminal.
-        '''
-        return { p for n, p in self.productions if n == non_terminal }
-
     def _remove_simple_productions(self):
         '''
         Remove all simple productions from the productions set.
@@ -541,7 +557,7 @@ class Grammar(object):
         '''
         new_set = set([ symbol ])
 
-        for prod in self._get_productions_by_non_terminal(symbol):
+        for prod in self[symbol]:
             if self._is_simple_prod(prod):
                 for i in self._symbol_simple(prod[0]):
                     new_set.add(i)
@@ -564,7 +580,7 @@ class Grammar(object):
     def __str__(self):
         lines = []
         for non_terminal in self.non_terminals:
-            productions = self._get_productions_by_non_terminal(non_terminal)
+            productions = self[non_terminal]
             line = f'{non_terminal} ->'
             for p in productions:
                 prod = ' '.join(p)
@@ -583,6 +599,8 @@ class Grammar(object):
 
         return '\n'.join(lines)
 
-
     def __getitem__(self, nt):
-        return self._get_productions_by_non_terminal(nt)
+        '''
+        Returns a list of the productions from the passed non terminal.
+        '''
+        return { p for n, p in self.productions if n == nt }

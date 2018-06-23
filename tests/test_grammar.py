@@ -523,31 +523,6 @@ class TestGrammar(unittest.TestCase):
         for i, _ in enumerate(result):
             self.assertSetEqual(result[i], expected[i])
 
-    def test_get_productions_by_non_terminal(self):
-        non_terminals = set('SAB')
-        terminals = set('ab')
-        productions = set([
-            Prod('S', ('A', 'B')),
-            Prod('A', ('a', 'A')),
-            Prod('A', (Grammar.EPSILON,)),
-            Prod('B', ('b', 'B')),
-            Prod('B', (Grammar.EPSILON,))
-        ])
-        start = 'S'
-        grammar = Grammar(non_terminals, terminals, productions, start)
-
-        exp_results = [
-            ('S', [ ('A', 'B') ]),
-            ('A', [ ('a', 'A'), (Grammar.EPSILON,) ]),
-            ('B', [ ('b', 'B'), (Grammar.EPSILON,) ])
-        ]
-
-        for n, p in exp_results:
-            res = list(grammar._get_productions_by_non_terminal(n))
-            res.sort()
-            p.sort()
-            self.assertListEqual(res, p)
-
     def test_str(self):
         non_terminals = set('SAB')
         terminals = set('ab')
@@ -1073,3 +1048,21 @@ class TestGrammar(unittest.TestCase):
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
         self.assertFalse(grammar.is_factored())
+
+    # def test_factor(self):
+    #     non_terminals = set('SABC')
+    #     terminals = set('abcd')
+    #     productions = set([
+    #         Prod('S', ('B', 'C')),
+    #         Prod('S', ('A', 'B')),
+    #         Prod('A', ('a', 'A')),
+    #         Prod('A', (Grammar.EPSILON,)),
+    #         Prod('B', ('b', 'B')),
+    #         Prod('B', ('d',)),
+    #         Prod('C', ('c', 'C')),
+    #         Prod('C', ('c',))
+    #     ])
+    #     start = 'S'
+    #     grammar = Grammar(non_terminals, terminals, productions, start)
+    #     grammar.factor()
+    #     self.assertTrue(0)
