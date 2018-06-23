@@ -1,6 +1,7 @@
 import re
 from itertools import combinations
 from collections import defaultdict
+from copy import deepcopy
 from pprint import pprint
 
 from grammar.production import Prod
@@ -9,6 +10,7 @@ from grammar.production import Prod
 class Grammar(object):
 
     EPSILON = '&'
+    FINISH = '$'
 
     def __init__(self, non_terminals, terminals, productions, start):
         super(Grammar, self).__init__()
@@ -266,49 +268,131 @@ class Grammar(object):
 
         return old_set
 
-    def first_and_follow(self):
-        first = {i: set() for i in self.non_terminals}
-        first.update((i, {i}) for i in self.terminals)
-        follow = {i: set() for i in self.non_terminals}
-        follow[self.start].add('$')
-        first_NT = {i: set() for i in self.non_terminals}
-        epsilon = set()
+    def first_sets(self):
+        first = self._first()
+        for val in first.values():
+            val -= self.non_terminals
+        return first
+
+    def first_NT(self):
+        first = self._first()
+        for first_set in first.values():
+            first_set -= self.terminals | { Grammar.EPSILON }
+
+        for symbol in self.terminals:
+            first.pop(symbol)
+        return first
+
+    def _first(self):
+        first_dict = defaultdict(set)
+        # Rule 1
+        for symbol in self.terminals:
+            first_dict[symbol].add(symbol)
 
         while True:
-            updated = False
+            new_dict = deepcopy(first_dict)
 
-            for nt, expression in self.productions:
-                for symbol in expression:
-                    if symbol == Grammar.EPSILON:
-                        updated |= self._union(epsilon, {nt})
-                        continue
-                    else:
-                        # FIRST
-                        updated |= self._union(first[nt], first[symbol])
-                        # FIRST_NT
-                        if symbol in first_NT:
-                            updated |= self._union(first_NT[nt], {symbol})
-                            updated |= self._union(first_NT[nt], first_NT[symbol])
-                        if symbol not in epsilon:
+            for symbol in self.non_terminals:
+                productions = self[symbol]
+
+                # Rule 2
+                to_discard = set()
+                for prod in productions:
+                    first = prod[0]
+                    if first in self.terminals:
+                        new_dict[symbol].add(first)
+                        to_discard.add(prod)
+                productions -= to_discard
+
+                # Rule 3
+                for prod in productions:
+                    first_seq = self._first_sequence(new_dict, prod)
+                    new_dict[symbol] |= first_seq
+
+            if new_dict == first_dict:
+                break
+
+            first_dict = new_dict
+
+        return first_dict
+
+    def follow_sets(self):
+        follow = defaultdict(set)
+        first = self.first_sets()
+
+        while True:
+            new_follow = deepcopy(follow)
+
+            for nt in self.non_terminals:
+
+                # Rule 1
+                if nt == self.start:
+                    new_follow[nt].add(Grammar.FINISH)
+
+                productions = self[nt]
+
+                # Rule 2
+                for prod in productions:
+                    seq = list(prod)
+                    while seq:
+                        symbol = seq.pop(0)
+                        # Go until the second-to-last symbol
+                        if not seq:
                             break
-                else:
-                    updated |= self._union(epsilon, {nt})
 
-                aux = follow[nt]
-                for symbol in reversed(expression):
-                    if symbol == Grammar.EPSILON:
-                        break
-                    if symbol in follow:
-                        updated |= self._union(follow[symbol], aux)
-                    if symbol in epsilon:
-                        aux = aux.union(first[symbol])
-                    else:
-                        aux = first[symbol]
+                        if symbol in self.terminals:
+                            continue
 
-            if not updated:
-                for nt in epsilon:
-                    first[nt].add(Grammar.EPSILON)
-                return first, follow, first_NT
+                        seq_first = self._first_sequence(first, seq)
+                        new_follow[symbol] |= seq_first - self.non_terminals
+
+                # Rule 3
+                for prod in productions:
+                    seq = list(prod)
+                    while seq:
+                        symbol = seq.pop(0)
+                        if symbol in self.terminals | { Grammar.EPSILON }:
+                            continue
+
+                        if not seq:
+                            new_follow[symbol] |= new_follow[nt]
+                            break
+
+                        if Grammar.EPSILON in self._first_sequence(first, seq):
+                            new_follow[symbol] |= new_follow[nt]
+
+
+            if new_follow == follow:
+                break
+
+            follow = new_follow
+
+        # We add EPSILON for simplicity, but it does not make much sense, so
+        # we filter it out
+        for val in follow.values():
+            val.discard(Grammar.EPSILON)
+
+        return dict(follow)
+
+    def _first_sequence(self, first, sequence):
+        first_set = set()
+        seq = list(sequence)
+        while seq:
+            symbol = seq.pop(0)
+
+            if symbol in self.terminals | { Grammar.EPSILON }:
+                first_set.add(symbol)
+                break
+
+            first_set |= first[symbol]
+            first_set.add(symbol)
+            if Grammar.EPSILON not in first[symbol]:
+                break
+
+            if seq:
+                first_set.discard(Grammar.EPSILON)
+
+        return first_set
 
     def has_direct_left_recursion(self):
         non_terminal_with_left_recursion = set()
@@ -431,7 +515,7 @@ class Grammar(object):
         '''
         Returns a list of the productions from the passed non terminal.
         '''
-        return [ p for n, p in self.productions if n == non_terminal ]
+        return { p for n, p in self.productions if n == non_terminal }
 
     def _remove_simple_productions(self):
         '''
@@ -498,3 +582,7 @@ class Grammar(object):
         lines.insert(0, start_line)
 
         return '\n'.join(lines)
+
+
+    def __getitem__(self, nt):
+        return self._get_productions_by_non_terminal(nt)

@@ -1,4 +1,7 @@
 import unittest
+
+from pprint import pprint
+
 from grammar.grammar import Grammar
 from grammar.production import Prod
 
@@ -540,7 +543,7 @@ class TestGrammar(unittest.TestCase):
         ]
 
         for n, p in exp_results:
-            res = grammar._get_productions_by_non_terminal(n)
+            res = list(grammar._get_productions_by_non_terminal(n))
             res.sort()
             p.sort()
             self.assertListEqual(res, p)
@@ -718,7 +721,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        first, _, _= grammar.first_and_follow()
+        first = grammar.first_sets()
         exp_first = {
             'a': {'a'},
             'b': {'b'},
@@ -729,6 +732,7 @@ class TestGrammar(unittest.TestCase):
             'B': {'b', '&', 'a', 'd'}
         }
         self.assertDictEqual(first, exp_first)
+
         # test 2
         non_terminals = set('SABC')
         terminals = set('abcd')
@@ -743,7 +747,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        first, _, _ = grammar.first_and_follow()
+        first = grammar.first_sets()
         exp_first = {
             'a': {'a'},
             'b': {'b'},
@@ -770,7 +774,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, follow, _ = grammar.first_and_follow()
+        follow = grammar.follow_sets()
         exp_follow = {
             'S': {'$'},
             'A': {'a', 'b', 'c', 'd'},
@@ -778,7 +782,8 @@ class TestGrammar(unittest.TestCase):
             'C': {'d', '$'}
         }
         self.assertDictEqual(follow, exp_follow)
-        # test 2
+
+        # # test 2
         non_terminals = set(['E', 'E1', 'T', 'T1', 'F'])
         terminals = set('+*()')
         terminals.add('id')
@@ -794,7 +799,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'E'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, follow, _ = grammar.first_and_follow()
+        follow = grammar.follow_sets()
         exp_follow = {
             'E': {'$', ')'},
             'E1': {'$', ')'},
@@ -803,6 +808,7 @@ class TestGrammar(unittest.TestCase):
             'F': {'$', '+', ')', '*'}
         }
         self.assertDictEqual(follow, exp_follow)
+
         # test 3
         non_terminals = set('SACDEF')
         terminals = set('abcdefg')
@@ -824,7 +830,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, follow, _ = grammar.first_and_follow()
+        follow = grammar.follow_sets()
         exp_follow = {
             'S': {'$', 'a', 'b', 'c', 'd', 'e', 'f', 'g'},
             'A': {'b'},
@@ -833,8 +839,10 @@ class TestGrammar(unittest.TestCase):
             'E': {'f', 'g', 'c', 'e'},
             'F': {'$', 'a', 'b', 'c', 'd', 'e', 'f', 'g'}
         }
+
         self.assertDictEqual(follow, exp_follow)
-        # test 4
+
+        # # test 4
         non_terminals = set('SABC')
         terminals = set('abce')
         productions = set([
@@ -851,7 +859,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, follow, _ = grammar.first_and_follow()
+        follow = grammar.follow_sets()
         exp_follow = {
             'S': {'$'},
             'A': {'a', 'b', 'c', '$'},
@@ -1027,7 +1035,7 @@ class TestGrammar(unittest.TestCase):
         ])
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
-        _, _, first_NT = grammar.first_and_follow()
+        first_NT = grammar.first_NT()
         exp_first_NT = {
             'S': {'A', 'B', 'C'},
             'A': set(),
@@ -1038,7 +1046,7 @@ class TestGrammar(unittest.TestCase):
 
     def test_is_factored_true(self):
         non_terminals = set([ 'S', 'S0', 'B', 'B0' ])
-        terminals = set('ab')
+        terminals = set('abd')
         productions = set([
             Prod('S', ('a','S0')),
             Prod('S', ('d','S')),
@@ -1054,7 +1062,7 @@ class TestGrammar(unittest.TestCase):
 
     def test_is_factored_false(self):
         non_terminals = set('SB')
-        terminals = set('ab')
+        terminals = set('abd')
         productions = set([
             Prod('S', ('a','S')),
             Prod('S', ('a','B')),
