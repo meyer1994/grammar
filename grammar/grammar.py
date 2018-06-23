@@ -200,22 +200,103 @@ class Grammar(object):
 
     def is_factored(self):
         '''
-        Checks if the grammar is factored or not
+        Checks if the grammar is factored or not.
+
+        It does so by intersecting the first sets of the productions of each
+        non terminal.
+        '''
+        factors = ( self._get_factors(n) for n in self.non_terminals )
+        for fact in factors:
+            factorables = filter(lambda f: len(f) > 1, fact)
+            factorables = list(factorables)
+            if factorables:
+                return False
+        return True
+
+    def _get_factors(self, nt):
+        '''
+        Gets the productions by a non-terminal that can be factored.
         '''
         first = self.first_sets()
-        for non_terminal in self.non_terminals:
-            productions = self[non_terminal]
-            visited = set()
-            for prod in productions:
-                for symbol in prod:
-                    if symbol == Grammar.EPSILON:
-                        continue
-                    if symbol in visited:
-                        return False
-                    if Grammar.EPSILON not in first[symbol]:
-                        visited.add(symbol)
+        prods = self[nt]
+        factors = []
 
-        return True
+        while prods:
+            p1 = prods.pop()
+            prod_set = set([ p1 ])
+            p1_set = self._first_sequence(first, p1)
+            for p2 in prods:
+                p2_set = self._first_sequence(first, p2)
+                intersection = (p1_set & p2_set) - { Grammar.EPSILON }
+                if intersection:
+                    prod_set.add(p2)
+
+            prods -= prod_set
+            factors.append(prod_set)
+
+        return factors
+
+    def _factor(self, nt, factors):
+        '''
+        Factor the productions passed.
+        '''
+        # Create new non terminal
+        new_nt = self._get_next_nt(nt)
+        self.non_terminals.add(new_nt)
+
+        # Get factorable part
+        factor_part = self._get_factor_part(factors)
+
+        # Remove productions
+        for f in factors:
+            self.productions.discard(Prod(nt, f))
+
+        # Add production to original non terminal
+        factor_part.append(new_nt)
+        self.add_production(nt, tuple(factor_part))
+
+        # Add non factorable part of prods to new non terminal
+        factor_size = len(factor_part) - 1 # we added the new_nt
+        for fact in factors:
+            fact = list(fact)[factor_size:]
+            if fact:
+                self.add_production(new_nt, tuple(fact))
+            else:
+                self.add_production(new_nt, Grammar.EPSILON)
+
+    def _get_factor_part(self, factors):
+        '''
+        Returns the factorable part of productions.
+        '''
+        smallest_size = min(map(lambda i: len(i), factors))
+
+        base_prod = factors.pop()
+        factors.add(base_prod)
+
+        factor_part = []
+        for i in range(smallest_size):
+            symbol = base_prod[i]
+            for factor in factors:
+                if factor[i] != symbol:
+                    return factor_part
+            factor_part.append(symbol)
+        return factor_part
+
+    def _get_next_nt(self, nt):
+        '''
+        Gets the next possible non-terminal to be created.
+        '''
+        nt = nt[0]
+
+        non_terminals = { n for n in self.non_terminals if len(n) > 1 }
+        non_terminals = { n for n in non_terminals if n[0] == nt }
+
+        counter = 0
+        while True:
+            new_nt = f'{nt}{counter}'
+            if new_nt not in non_terminals:
+                return new_nt
+            counter += 1
 
     def factor(self, steps=1):
         grammar = Grammar(
@@ -224,14 +305,9 @@ class Grammar(object):
             self.productions.copy(),
             self.start)
 
-    def _get_factors(self):
-        to_factor = defaultdict(set)
-        for non_terminal in self.non_terminals:
-            prods = self[non_terminal]
-            factorable = { p for p in prods if p[0] in self.non_terminals }
-            if len(factorable) > 1:
-                to_factor[non_terminal] |= factorable
-        return dict(to_factor)
+        factors_dict = { n: self._get_factors(n) for n in self.non_terminals }
+
+
 
     def productive(self):
         '''
@@ -336,7 +412,7 @@ class Grammar(object):
 
             first_dict = new_dict
 
-        return first_dict
+        return dict(first_dict)
 
     def follow_sets(self):
         follow = defaultdict(set)
