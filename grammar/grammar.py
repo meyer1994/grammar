@@ -262,7 +262,7 @@ class Grammar(object):
             if fact:
                 self.add_production(new_nt, tuple(fact))
             else:
-                self.add_production(new_nt, Grammar.EPSILON)
+                self.add_production(new_nt, (Grammar.EPSILON,))
 
     def _get_factor_part(self, factors):
         '''
@@ -297,17 +297,6 @@ class Grammar(object):
             if new_nt not in non_terminals:
                 return new_nt
             counter += 1
-
-    def factor(self, steps=1):
-        grammar = Grammar(
-            self.non_terminals.copy(),
-            self.terminals.copy(),
-            self.productions.copy(),
-            self.start)
-
-        factors_dict = { n: self._get_factors(n) for n in self.non_terminals }
-
-
 
     def productive(self):
         '''
@@ -541,11 +530,6 @@ class Grammar(object):
         direct = self.has_direct_left_recursion()
         indirect = self.has_indirect_left_recursion()
         return direct or indirect
-
-    def _union(self, first, begins):
-        n = len(first)
-        first |= begins
-        return len(first) != n
 
     @staticmethod
     def epsilon_combinations(prod, epsilon_set):

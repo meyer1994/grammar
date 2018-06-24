@@ -95,6 +95,7 @@ class TestFactors(unittest.TestCase):
             exp_productions,
             exp_start)
 
+
         factors = { ('b', 'B'), ('b',) }
         self.grammar._factor('B', factors)
         self.assertEqual(self.grammar, exp_grammar)
