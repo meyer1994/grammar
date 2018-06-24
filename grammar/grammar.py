@@ -213,6 +213,26 @@ class Grammar(object):
                 return False
         return True
 
+    def factor(self, steps=1):
+        grammar = deepcopy(self)
+
+        while steps:
+            factors = {}
+            for nt in grammar.non_terminals:
+                factors[nt] = grammar._get_factors(nt)
+                factors[nt] = filter(lambda f: len(f) > 1, factors[nt])
+
+            for nt, factor in factors.items():
+                for f in factor:
+                    if steps == 0:
+                        return False
+                    grammar._factor(nt, f)
+                    steps -= 1
+                if grammar.is_factored():
+                    return grammar
+
+        return False
+
     def _get_factors(self, nt):
         '''
         Gets the productions by a non-terminal that can be factored.
@@ -664,3 +684,4 @@ class Grammar(object):
         Returns a list of the productions from the passed non terminal.
         '''
         return { p for n, p in self.productions if n == nt }
+
