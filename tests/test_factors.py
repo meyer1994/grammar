@@ -25,8 +25,8 @@ class TestFactors(unittest.TestCase):
         productions = set([
             Prod('S', ('a','S0')),
             Prod('S', ('d','S')),
-            Prod('S0', ('B')),
-            Prod('S0', ('S')),
+            Prod('S0', ('B',)),
+            Prod('S0', ('S',)),
             Prod('B', ('b','B0')),
             Prod('B0', ('B',)),
             Prod('B0', (Grammar.EPSILON,)),
@@ -113,3 +113,42 @@ class TestFactors(unittest.TestCase):
         for test, exp in zip(tests, expected):
             res = self.grammar._get_factor_part(test)
             self.assertListEqual(res, exp)
+
+    def test_factor_steps(self):
+        res = self.grammar.factor()
+        self.assertFalse(res)
+
+        non_terminals = { 'S', 'S0', 'B', 'B0' }
+        terminals = set('abd')
+        productions = {
+            Prod('S', ('a','S0')),
+            Prod('S', ('d','S')),
+            Prod('S0', ('B',)),
+            Prod('S0', ('S',)),
+            Prod('B', ('b','B0')),
+            Prod('B0', ('B',)),
+            Prod('B0', (Grammar.EPSILON,)),
+        }
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        res = self.grammar.factor(2)
+        self.assertEqual(grammar, res)
+
+        res = self.grammar.factor(10)
+        self.assertEqual(grammar, res)
+
+    def test_factor_loop(self):
+        non_terminals = set('AS')
+        terminals = set('ac')
+        productions = {
+            Prod('S', ('a','S')),
+            Prod('S', ('A',)),
+            Prod('A', ('a', 'A', 'c')),
+            Prod('A', (Grammar.EPSILON,))
+        }
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        result = grammar.factor(10)
+        self.assertFalse(result)
