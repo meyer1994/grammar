@@ -48,7 +48,9 @@ class Grammar(object):
         '''
         Remove all unreachable symbols from the grammar.
         '''
-        unreachable = (self.terminals | self.non_terminals)
+        unreachable = self.terminals | self.non_terminals
+        print('start', self.start)
+        print('reachable', self.reachable(self.start))
         unreachable -= self.reachable(self.start)
         for symbol in unreachable:
             if symbol in self.terminals:
@@ -62,7 +64,9 @@ class Grammar(object):
         Remove useless symbols.
         '''
         self.remove_unproductive()
+        print(self)
         self.remove_unreachable()
+        print(self)
 
     def remove_epsilon(self):
         '''
@@ -91,7 +95,7 @@ class Grammar(object):
             return
 
         # S' -> S | epsilon
-        new_start = self.start + "'"
+        new_start = self._get_next_nt(self.start)
         self.non_terminals.add(new_start)
         self.add_production(new_start, (self.start,))
         self.add_production(new_start, (Grammar.EPSILON,))
@@ -101,9 +105,7 @@ class Grammar(object):
         '''
         Remove simple productions from the grammar.
         '''
-        simple_table = {}
-        for symbol in self.non_terminals:
-            simple_table[symbol] = self._symbol_simple(symbol)
+        simple_table = self.simple_table()
 
         self._remove_simple_productions()
 
@@ -111,6 +113,9 @@ class Grammar(object):
             for non_terminal in simple:
                 for prod in self[non_terminal]:
                     self.add_production(symbol, prod)
+
+    def simple_table(self):
+        return { s: self._symbol_simple(s) for s in self.non_terminals }
 
     def remove_direct_left_recursion(self, symbol):
         prods_to_add = []
@@ -350,9 +355,9 @@ class Grammar(object):
         Gets the set of reachable symbols from the symbol.
         '''
         # (Vn U Vt)*
-        union = self.non_terminals | self.terminals | set(Grammar.EPSILON)
+        union = self.non_terminals | self.terminals | { Grammar.EPSILON }
 
-        old_set = set(symbol)
+        old_set = { symbol }
         while True:
             # Ni
             new_set = set()
@@ -650,6 +655,16 @@ class Grammar(object):
         '''
         return len(prod) == 1 and prod[0] in self.non_terminals
 
+    def _to_line(self, nt):
+        productions = self[nt]
+        line = f'{nt} ->'
+        for p in productions:
+            prod = ' '.join(p)
+            line += f' {prod} |'
+        line = line[:-2]
+        return line
+
+
     def __eq__(self, other):
         vnt = self.non_terminals == other.non_terminals
         vt = self.terminals == other.terminals
@@ -658,24 +673,10 @@ class Grammar(object):
         return vnt and vt and prods and start
 
     def __str__(self):
-        lines = []
-        for non_terminal in self.non_terminals:
-            productions = self[non_terminal]
-            line = f'{non_terminal} ->'
-            for p in productions:
-                prod = ' '.join(p)
-                line += f' {prod} |'
-            line = line[:-2]
+        lines = [ self._to_line(self.start) ]
+        for non_terminal in self.non_terminals - { self.start }:
+            line = self._to_line(non_terminal)
             lines.append(line)
-
-        # Makes start symbol come first
-        # The previous implementation used a loop. But, because of the
-        # non-deterministic nature of sets, sometimes the coverage of the tests
-        # where not 100%
-        lines_starts = map(lambda l: l.split(' -> ')[0], lines)
-        start_symbol_index = list(lines_starts).index(self.start)
-        start_line = lines.pop(start_symbol_index)
-        lines.insert(0, start_line)
 
         return '\n'.join(lines)
 
