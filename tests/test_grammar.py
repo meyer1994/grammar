@@ -218,11 +218,11 @@ class TestGrammar(unittest.TestCase):
         grammar.remove_epsilon()
 
 
-        exp_non_terminals = set([ "S'", 'S', 'A', 'B', 'C', 'D' ])
+        exp_non_terminals = { 'S0', 'S', 'A', 'B', 'C', 'D' }
         exp_terminals = set('abcd')
         exp_productions = set([
-            Prod("S'", (Grammar.EPSILON,)),
-            Prod("S'", ('S',)),
+            Prod('S0', (Grammar.EPSILON,)),
+            Prod('S0', ('S',)),
             Prod('S', ('b',)),
             Prod('S', ('D',)),
             Prod('S', ('A',)),
@@ -250,7 +250,7 @@ class TestGrammar(unittest.TestCase):
             Prod('D', ('d', 'D')),
             Prod('D', ('d',))
         ])
-        exp_start = "S'"
+        exp_start = 'S0'
         exp_grammar = Grammar(
             exp_non_terminals,
             exp_terminals,
