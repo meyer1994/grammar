@@ -2,8 +2,7 @@ import unittest
 
 from pprint import pprint
 
-from grammar.grammar import Grammar
-from grammar.production import Prod
+from grammar import Grammar, Prod
 
 class TestFactors(unittest.TestCase):
     def setUp(self):

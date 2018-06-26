@@ -1,5 +1,6 @@
 import unittest
-from grammar.production import Prod
+
+from grammar import Prod
 
 class TestProduction(unittest.TestCase):
 

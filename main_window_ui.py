@@ -2,6 +2,7 @@ import re
 
 from copy import deepcopy
 from functools import wraps
+from collections import OrderedDict
 from pprint import pprint
 
 from layout import Ui_MainWindow
@@ -100,24 +101,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def check_grammar(fun):
         @wraps(fun)
         def wrapped(self, *args, **kwargs):
-            text = self.textEditGrammarInput.toPlainText()
-            table = self._filter_input(text)
+            table = self._get_grammar_input()
 
             # Check non-terminals
             for non_terminal in table.keys():
-                if not NON_TERMINAL_RE.match(non_terminal):
-                    self.log(f'Invalid non-terminal: {non_terminal}')
+                if not re.match(NON_TERMINAL_RE, non_terminal):
+                    self.log(f'Invalid non-terminal: "{non_terminal}"')
                     return
 
             # Check productions
-            for expressions in table.values():
-                for exp in expressions:
-                    print(exp)
-                    if exp == Grammar.EPSILON:
+            for productions in table.values():
+                for prod in productions:
+                    if prod == (Grammar.EPSILON,):
                         continue
-                    for symbol in exp.split():
+                    for symbol in prod:
                         if not self._valid_symbol(symbol):
-                            self.log(f'Invalid expression: {exp}')
+                            self.log(f'Invalid expression: "{prod}"')
                             return
 
             return fun(self)
@@ -126,25 +125,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _valid_symbol(self, symbol):
         return re.match(NON_TERMINAL_RE, symbol) or re.match(TERMINAL_RE, symbol)
 
-    def _filter_input(self, input_str):
-        lines = input_str.split('\n')
+    def _get_grammar_input(self):
+        text = self.textEditGrammarInput.toPlainText()
+        text = re.sub(SPACE_REMOVE_RE, ' ', text)
 
-        # Filter empty lines
-        for line in list(lines):
-            if line == '':
-                lines.remove(line)
+        table = OrderedDict()
 
-        table = {}
+        lines = text.split('\n')
 
-        # Get non-terminals
         for line in lines:
-            line = re.sub(SPACE_REMOVE_RE, ' ', line).strip()
-            non_terminal = line.split('->')[0].strip()
-            expressions = line.split('->')[1].split('|')
-            table[non_terminal] = expressions
-
-        pprint(table)
-
+            line = line.strip()
+            non_terminal, expressions = line.split('->')
+            non_terminal = non_terminal.strip()
+            table[non_terminal] = []
+            for exp in expressions.split('|'):
+                exp = exp.strip().split()
+                exp = filter(lambda i: i != '', exp)
+                exp = tuple(exp)
+                if len(exp) > 0:
+                    table[non_terminal].append(exp)
         return table
 
     def _save_grammar(self, name, grammar):
@@ -285,6 +284,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self._ne()
 
     @check_name
+    @check_grammar
     def _create_grammar(self):
         grammar_name = self.lineInputGrammarName.text()
         grammar = self._to_grammar()
@@ -309,31 +309,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lineInputGrammarName.setText(grammar_name)
         self.textEditGrammarInput.setText(str(grammar))
 
-    @check_grammar
     def _to_grammar(self):
-        grammar_text = self.textEditGrammarInput.toPlainText()
-        table = self._filter_input(grammar_text)
+        table = self._get_grammar_input()
 
         terminals = set()
         productions = set()
         non_terminals = set(table.keys())
 
         # Start
-        start = grammar_text.split('\n')[0].split('->')[0].strip()
+        start = next(iter(table))
 
-        # Terminals
-        for expression in table.values():
-            for symbol in expression:
-                if symbol == Grammar.EPSILON:
-                    continue
-
-                if symbol not in non_terminals:
-                    terminals.add(symbol)
+        # Terminal
+        for prods in table.values():
+            for prod in prods:
+                for symbol in prod:
+                    if re.match(TERMINAL_RE, symbol):
+                        terminals.add(symbol)
 
         # Productions
         for nt, prods in table.items():
             for exp in prods:
-                productions.add(Prod(nt, tuple(exp)))
+                productions.add(Prod(nt, exp))
 
         return Grammar(non_terminals, terminals, productions, start)
 

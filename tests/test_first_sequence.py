@@ -1,7 +1,6 @@
 import unittest
 
-from grammar.grammar import Grammar
-from grammar.production import Prod
+from grammar import Grammar, Prod
 
 class TestFirstSequence(unittest.TestCase):
     def setUp(self):
