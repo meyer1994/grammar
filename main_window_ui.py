@@ -17,6 +17,13 @@ GRAMMAR_PATTERN = re.compile(r"^[A-Z]'?->[a-z0-9&][A-Z]?(\|[a-z0-9&][A-Z]?)*$")
 S -> A B
 A -> a A | &
 B -> b B | &
+
+S -> A b C D | E F
+A -> a A | &
+C -> E C F | c
+D -> C D | d D d | &
+E -> e E | &
+F -> F S | f F | g
 '''
 
 
@@ -38,46 +45,147 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.grammarList.currentItemChanged.connect(self._load_grammar)
         self.buttonToPropper.clicked.connect(self._to_proper)
 
+        # buttons
+        self.buttonNF.clicked.connect(self._nf)
+        self.buttonVI.clicked.connect(self._vi)
+        self.buttonNA.clicked.connect(self._na)
+        self.buttonNE.clicked.connect(self._ne)
+
+        self.buttonFirst.clicked.connect(self._first)
+        self.buttonFirstNT.clicked.connect(self._first_nt)
+        self.buttonFollow.clicked.connect(self._follow)
+
+        self.buttonFinite.clicked.connect(self._finite)
+        self.buttonEmpty.clicked.connect(self._empty)
+
+        self.buttonCheckRecursion.clicked.connect(self._check_recursion)
+        self.buttonFactorSteps.clicked.connect(self._factor)
+
+        self.buttonRemoveDirectRec.clicked.connect(self._remove_direct_recursion)
+        self.buttonRemoveIndirectRec.clicked.connect(self._remove_indirect_recursion)
+
+    def _save_grammar(self, name, grammar):
+        item = QListWidgetItem(name)
+        item.setData(Qt.UserRole, grammar)
+        self.grammarList.addItem(item)
+
+    def _first(self):
+        first = self.selected_grammar.first_sets()
+        self.log('First {')
+        self.log_dict(first)
+        self.log('}')
+
+    def _first_nt(self):
+        first_nt = self.selected_grammar.first_NT()
+        self.log('First-NT {')
+        self.log_dict(first_nt)
+        self.log('}')
+
+    def _follow(self):
+        follow = self.selected_grammar.follow_sets()
+        self.log('Follow {')
+        self.log_dict(follow)
+        self.log('}')
+
+    def _nf(self):
+        nf = self.selected_grammar.productive()
+        self.log(f'Productive:\t{nf}')
+
+    def _vi(self):
+        grammar = self.selected_grammar
+        vi = grammar.reachable(grammar.start)
+        self.log(f'Reachable:\t{vi}')
+
+    def _na(self):
+        na = self.selected_grammar.simple_table()
+        self.log('NA {')
+        self.log_dict(na)
+        self.log('}')
+
+    def _ne(self):
+        ne = self.selected_grammar._epsilon_closure()
+        ne = { i[0] for i in ne }
+        self.log(f'Epsilon closure:\t{ne}')
+
+    def _empty(self):
+        is_empty = self.selected_grammar.is_empty()
+        self.log(f'Empty:\t{is_empty}')
+
+    def _finite(self):
+        is_finite = self.selected_grammar.is_finite()
+        self.log(f'Finite:\t{is_finite}')
+
+    def _factor(self):
+        steps = int(self.lineEditFactorSteps.text())
+
+        if steps == 0:
+            factored = self.selected_grammar.is_factored()
+        else:
+            factored = isinstance(self.selected_grammar.factor(steps), Grammar)
+        self.log(f'Factor ({steps}):\t{factored}')
+
+    def _remove_direct_recursion(self):
+        grammar = deepcopy(self.selected_grammar)
+        grammar_name = f'{self.lineInputGrammarName.text()}_direct'
+
+        direct = grammar.has_direct_left_recursion()
+        for s in direct:
+            grammar.remove_direct_left_recursion(s)
+
+        self.log('Removing direct left recursions')
+        self.log_grammar(grammar_name, grammar)
+        self._save_grammar(grammar_name, grammar)
+
+    def _check_recursion(self):
+        grammar = self.selected_grammar
+        direct = grammar.has_direct_left_recursion()
+        indirect = grammar.has_indirect_left_recursion()
+        self.log(f'Non-terminals with direct recursion:\t{direct}')
+        self.log(f'Non-terminals with indirect recursion:\t{indirect}')
+
+    def _remove_indirect_recursion(self):
+        grammar = deepcopy(self.selected_grammar)
+        grammar_name = f'{self.lineInputGrammarName.text()}_indirect'
+
+        grammar.remove_left_recursion()
+
+        self.log('Removing all left recursions')
+        self.log_grammar(grammar_name, grammar)
+        self._save_grammar(grammar_name, grammar)
+
+
     def _to_proper(self):
         grammar_name = self.selected_grammar_name
 
         # Create grammars
         epsilon_free = deepcopy(self.selected_grammar)
-        ne = epsilon_free._epsilon_closure().copy()
         epsilon_free.remove_epsilon()
         epsilon_free_name = f'{grammar_name}_epsilon_free'
 
         simple_free = deepcopy(epsilon_free)
-        na = deepcopy(simple_free.simple_table())
         simple_free.remove_simple()
         simple_free_name = f'{grammar_name}_simple_free'
 
-        useless_free = deepcopy(simple_free)
-        vi = useless_free.reachable(useless_free.start).copy()
-        nf = useless_free.productive().copy()
-        useless_free.remove_useless()
-        useless_free_name = f'{grammar_name}_useless_free'
+        unproductive_free = deepcopy(simple_free)
+        unproductive_free.remove_unproductive()
+        unproductive_free_name = f'{grammar_name}_unproductive_free'
+
+        unreachable_free = deepcopy(unproductive_free)
+        unreachable_free.remove_unreachable()
+        unreachable_free_name = f'{grammar_name}_unreachable_free'
 
         # Create list items
-        item_epsilon = QListWidgetItem(epsilon_free_name)
-        item_epsilon.setData(Qt.UserRole, epsilon_free)
-        item_simple = QListWidgetItem(simple_free_name)
-        item_simple.setData(Qt.UserRole, simple_free)
-        item_useless = QListWidgetItem(useless_free_name)
-        item_useless.setData(Qt.UserRole, useless_free)
-
-        # Add to list
-        self.grammarList.addItem(item_epsilon)
-        self.grammarList.addItem(item_simple)
-        self.grammarList.addItem(item_useless)
+        self._save_grammar(epsilon_free_name, epsilon_free)
+        self._save_grammar(simple_free_name, simple_free)
+        self._save_grammar(unproductive_free_name, unproductive_free)
+        self._save_grammar(unreachable_free_name, unreachable_free)
 
         # Log
         self.log('Intermediary grammars added to list')
-        self.log(f'Nf:\t{nf}')
-        self.log(f'Vi:\t{vi}')
-        self.log(f'Na:\t{na}')
-        self.log(f'Ne:\t{ne}')
-
+        self._nf()
+        self._vi()
+        self._na()
+        self._ne()
 
     def _create_grammar(self):
         grammar_name = self.lineInputGrammarName.text()
@@ -87,10 +195,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.log('Saving grammar:')
         self.log_grammar(grammar_name, grammar)
 
-        item = QListWidgetItem(grammar_name)
-        item.setData(Qt.UserRole, grammar)
-
-        self.grammarList.addItem(item)
+        self._save_grammar(grammar_name, grammar)
 
     def _load_grammar(self, nxt, prev):
         grammar_name = nxt.text()
@@ -143,6 +248,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def log(self, text):
         self.textEditConsole.append(text)
+
+    def log_dict(self, dct):
+        for k, v in dct.items():
+            self.textEditConsole.append(f'{k}:\t{v}')
 
     def log_grammar(self, name, grammar):
         self.log(f'Name:\t{name}')

@@ -613,67 +613,66 @@ class TestGrammar(unittest.TestCase):
         self.assertEqual(left_recursive_symbols, set())
 
     def test_remove_direct_left_recursion(self):
-        non_terminals = set('S')
+        non_terminals = { 'S' }
         terminals = set('ab')
-        productions = set([
+        productions = {
             Prod('S', ('S','a')),
             Prod('S', ('b',))
-        ])
+        }
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
         grammar.remove_direct_left_recursion('S')
 
-        expected_non_terminals = set(['S', 'S1'])
-        expected_terminals = set('ab')
-        expected_productions = set([
-            Prod('S', ('b','S1')),
-            Prod('S1', ('a','S1')),
-            Prod('S1', (Grammar.EPSILON,))
-        ])
-        expected_start = 'S'
+        exp_non_terminals = { 'S', 'S0' }
+        exp_terminals = set('ab')
+        exp_productions = {
+            Prod('S', ('b','S0')),
+            Prod('S0', ('a','S0')),
+            Prod('S0', (Grammar.EPSILON,))
+        }
+        exp_start = 'S'
         exp_grammar = Grammar(
-            expected_non_terminals,
-            expected_terminals,
-            expected_productions,
-            expected_start)
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
         self.assertEqual(grammar, exp_grammar)
+
         # new example
         non_terminals = set('ETF')
-        terminals = set('+*()')
-        terminals.add('id')
-        productions = set([
+        terminals = set('+*()') | { 'id' }
+        productions = {
             Prod('E', ('E','+','T')),
             Prod('E', ('T',)),
             Prod('T', ('T','*','F')),
             Prod('T', ('F',)),
             Prod('F', ('(','E',')')),
             Prod('F', ('id',))
-        ])
+        }
         start = 'E'
         grammar = Grammar(non_terminals, terminals, productions, start)
         left_recursive_symbols = grammar.has_direct_left_recursion()
         for symbol in left_recursive_symbols:
             grammar.remove_direct_left_recursion(symbol)
 
-        expected_non_terminals = set(['E', 'E1', 'T', 'T1', 'F'])
-        expected_terminals = set('+*()')
-        expected_terminals.add('id')
-        expected_productions = set([
-            Prod('E', ('T','E1')),
-            Prod('E1', ('+','T','E1')),
-            Prod('E1', (Grammar.EPSILON,)),
-            Prod('T', ('F','T1')),
-            Prod('T1', ('*','F','T1')),
-            Prod('T1', (Grammar.EPSILON,)),
+        exp_non_terminals = { 'E', 'E0', 'T', 'T0', 'F' }
+        exp_terminals = set('+*()') | { 'id' }
+        exp_productions = {
+            Prod('E', ('T','E0')),
+            Prod('E0', ('+','T','E0')),
+            Prod('E0', (Grammar.EPSILON,)),
+            Prod('T', ('F','T0')),
+            Prod('T0', ('*','F','T0')),
+            Prod('T0', (Grammar.EPSILON,)),
             Prod('F', ('(','E',')')),
             Prod('F', ('id',))
-        ])
-        expected_start = 'E'
+        }
+        exp_start = 'E'
         exp_grammar = Grammar(
-            expected_non_terminals,
-            expected_terminals,
-            expected_productions,
-            expected_start)
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
         self.assertEqual(grammar, exp_grammar)
 
     def test_first(self):
@@ -899,63 +898,64 @@ class TestGrammar(unittest.TestCase):
     def test_remove_left_recursion(self):
         non_terminals = set('SA')
         terminals = set('abcd')
-        productions = set([
+        productions = {
             Prod('S', ('A','a')),
             Prod('S', ('S','b')),
             Prod('A', ('S','c')),
             Prod('A', ('d',))
-        ])
+        }
         start = 'S'
         grammar = Grammar(non_terminals, terminals, productions, start)
         grammar.remove_left_recursion()
 
-        exp_non_terminals1 = set(['S', 'S1', 'A', 'A1'])
+        exp_non_terminals1 = { 'S', 'S0', 'A', 'A0' }
         exp_terminals1 = set('abcd')
-        exp_productions1 = set([
-            Prod('S', ('A','a','S1')),
-            Prod('S1', ('b','S1')),
-            Prod('S1', (Grammar.EPSILON,)),
-            Prod('A', ('d','A1')),
-            Prod('A1', ('a','S1','c','A1')),
-            Prod('A1', (Grammar.EPSILON,))
-        ])
+        exp_productions1 = {
+            Prod('S', ('A','a','S0')),
+            Prod('S0', ('b','S0')),
+            Prod('S0', (Grammar.EPSILON,)),
+            Prod('A', ('d','A0')),
+            Prod('A0', ('a','S0','c','A0')),
+            Prod('A0', (Grammar.EPSILON,))
+        }
         exp_start1 = 'S'
         exp1 = Grammar(exp_non_terminals1, exp_terminals1, exp_productions1, exp_start1)
 
-        exp_non_terminals2 = set(['S', 'S1', 'A'])
+        exp_non_terminals2 = { 'S', 'S0', 'A' }
         exp_terminals2 = set('abcd')
-        exp_productions2 = set([
-            Prod('S1', ('c','a','S1')),
-            Prod('S1', ('b','S1')),
-            Prod('S1', (Grammar.EPSILON,)),
-            Prod('S', ('d','a','S1')),
+        exp_productions2 = {
+            Prod('S0', ('c','a','S0')),
+            Prod('S0', ('b','S0')),
+            Prod('S0', (Grammar.EPSILON,)),
+            Prod('S', ('d','a','S0')),
             Prod('A', ('S','c')),
             Prod('A', ('d',))
-        ])
+        }
         exp_start2 = 'S'
         exp2 = Grammar(exp_non_terminals2, exp_terminals2, exp_productions2, exp_start2)
 
         exp_answers = [exp1, exp2]
         self.assertIn(grammar, exp_answers)
+        # assert False
 
     def test_remove_direct_left_recursion2(self):
-        non_terminals = set(['S1'])
+        non_terminals = { 'S1' }
         terminals = set('ab')
-        productions = set([
+        productions = {
             Prod('S1', ('S1','a')),
             Prod('S1', ('b',))
-        ])
+        }
         start = 'S1'
         grammar = Grammar(non_terminals, terminals, productions, start)
         grammar.remove_direct_left_recursion('S1')
 
-        expected_non_terminals = set(['S1', 'S2'])
+        expected_non_terminals = { 'S1', 'S0' }
         expected_terminals = set('ab')
-        expected_productions = set([
-            Prod('S1', ('b','S2')),
-            Prod('S2', ('a','S2')),
-            Prod('S2', (Grammar.EPSILON,))
-        ])
+        expected_productions = {
+            Prod('S1', ('b','S0')),
+            Prod('S0', ('a','S0')),
+            Prod('S0', (Grammar.EPSILON,))
+        }
         expected_start = 'S1'
         exp_grammar = Grammar(
             expected_non_terminals,
