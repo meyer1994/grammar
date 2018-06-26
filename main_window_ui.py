@@ -101,7 +101,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def check_grammar(fun):
         @wraps(fun)
         def wrapped(self, *args, **kwargs):
-            table = self._get_grammar_input()
+            try:
+                table = self._get_grammar_input()
+            except Exception as e:
+                self.log('Invalid grammar')
+                return
 
             # Check non-terminals
             for non_terminal in table.keys():
