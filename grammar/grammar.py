@@ -49,8 +49,6 @@ class Grammar(object):
         Remove all unreachable symbols from the grammar.
         '''
         unreachable = self.terminals | self.non_terminals
-        print('start', self.start)
-        print('reachable', self.reachable(self.start))
         unreachable -= self.reachable(self.start)
         for symbol in unreachable:
             if symbol in self.terminals:
@@ -64,9 +62,7 @@ class Grammar(object):
         Remove useless symbols.
         '''
         self.remove_unproductive()
-        print(self)
         self.remove_unreachable()
-        print(self)
 
     def remove_epsilon(self):
         '''
@@ -118,55 +114,49 @@ class Grammar(object):
         return { s: self._symbol_simple(s) for s in self.non_terminals }
 
     def remove_direct_left_recursion(self, symbol):
-        prods_to_add = []
-        prods_to_remove = []
-        count = 1
-        for prod in self.productions:
-            if prod.n == symbol:
-                while True:
-                    if (symbol[0] + str(count)) in self.non_terminals:
-                        count += 1
-                    else:
-                        break
+        direct_recursion = { p for p in self[symbol] if p[0] == symbol }
+        if not direct_recursion:
+            return
 
-                if prod.p[0] == symbol:
-                    prods_to_add.append(Prod(symbol[0] + str(count), prod.p[1:] + (symbol[0] + str(count),) ))
-                    prods_to_remove.append(prod)
-                else:
-                    prods_to_add.append(Prod(symbol, prod.p + (symbol[0] + str(count),) ))
-                    prods_to_remove.append(prod)
+        no_recursion = { p for p in self[symbol] if p[0] != symbol }
 
-        self.non_terminals.add(symbol[0] + str(count))
-        self.productions.add(Prod(symbol[0] + str(count), (Grammar.EPSILON,)))
-        for prod in prods_to_remove:
-            self.productions.discard(prod)
-        for prod in prods_to_add:
-            self.productions.add(prod)
+        # Remove prods
+        for p in self[symbol]:
+            self.productions.discard((symbol, p))
+
+        # Create new nt
+        new_symbol = self._get_next_nt(symbol)
+        self.non_terminals.add(new_symbol)
+
+        for prod in no_recursion:
+            self.add_production(symbol, prod + (new_symbol,))
+
+        for prod in direct_recursion:
+            self.add_production(new_symbol, prod[1:] + (new_symbol,))
+        self.add_production(new_symbol, (Grammar.EPSILON,))
 
     def remove_left_recursion(self):
-        symbols_with_direct_left_recursion = self.has_direct_left_recursion()
-        #order vn
-        ordered_vn = dict(zip(range(len(self.non_terminals)), self.non_terminals))
-        for i in range(len(ordered_vn)):
-            for j in range(0, i):
-                prods_to_remove = []
-                prods_to_add = []
-                for prod in self.productions:
-                    if prod.n == ordered_vn[i] and prod.p[0] == ordered_vn[j]:
-                        prods_to_remove.append(prod)
-                        for (vn, production) in self.productions:
-                            if vn == ordered_vn[j]:
-                                prods_to_add.append(Prod(ordered_vn[i], production + prod.p[1:]))
+        print(self)
+        ordered_vn = [ i for i in self.non_terminals ]
+        pprint(ordered_vn)
+        print('='*10)
 
-                for prod in prods_to_remove:
-                    self.productions.discard(prod)
-                for prod in prods_to_add:
-                    self.productions.add(prod)
-                    if prod.n == prod.p[0]:
-                        symbols_with_direct_left_recursion.add(prod.n)
+        for i, ai in enumerate(ordered_vn):
+            for j in range(i):
+                aj = ordered_vn[j]
+                prods_to_remove = set()
+                prods_to_add = set()
+                aj = ordered_vn[j]
+                for prod in self[ai]:
+                    if prod[0] == aj:
+                        self.productions.discard(Prod(ai, prod))
+                        for production in self[aj]:
+                            new_prod = production + prod[1:]
+                            self.add_production(ai, new_prod)
+                            # prods_to_add.append(Prod(ordered_vn[i], production + prod.p[1:]))
 
-            if ordered_vn[i] in symbols_with_direct_left_recursion:
-                self.remove_direct_left_recursion(ordered_vn[i])
+            self.remove_direct_left_recursion(ai)
+        print(self)
 
     def is_empty(self):
         '''
@@ -333,7 +323,7 @@ class Grammar(object):
             new_set = set()
 
             # (Ni-1 U Vt)*
-            union = old_set | self.terminals | set(Grammar.EPSILON)
+            union = old_set | self.terminals | { Grammar.EPSILON }
 
             for (non_term, prod) in self.productions:
                 # alpha contained in (Ni-1 U Vt)*
@@ -600,7 +590,7 @@ class Grammar(object):
             new_set = set()
 
             # (Ni-1 U epsilon)*
-            union = old_set | set([ (Grammar.EPSILON,) ])
+            union = old_set | { (Grammar.EPSILON,) }
 
             for (non_term, prod) in self.productions:
                 prods = ( (i,) for i in prod )
