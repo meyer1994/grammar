@@ -1,6 +1,8 @@
 import unittest
 
+
 from pprint import pprint
+from copy import deepcopy
 
 from grammar.grammar import Grammar
 from grammar.production import Prod
@@ -1012,3 +1014,54 @@ class TestGrammar(unittest.TestCase):
             'C': set()
         }
         self.assertDictEqual(first_NT, exp_first_NT)
+
+    def test_epslon_remove_recursion(self):
+        non_terminals = set('SAB')
+        terminals = set('ab')
+        productions = {
+            Prod('S', ('A', 'B')),
+            Prod('A', ('a', 'A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,))
+        }
+        start = 'S'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        results = [ deepcopy(grammar) ]
+
+        exp_non_terminals = set('SAB')
+        exp_terminals = set('ab')
+        exp_productions = {
+            Prod('S', ('a', 'A', 'B')),
+            Prod('S', ('B',)),
+            Prod('A', ('a', 'A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,))
+        }
+        exp_start = 'S'
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
+        results.append(exp_grammar)
+
+        exp_productions = {
+            Prod('S', ('a', 'A', 'B')),
+            Prod('S', ('b', 'B',)),
+            Prod('A', ('a', 'A')),
+            Prod('A', (Grammar.EPSILON,)),
+            Prod('B', ('b', 'B')),
+            Prod('B', (Grammar.EPSILON,))
+        }
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
+        results.append(exp_grammar)
+
+        grammar.remove_left_recursion()
+        self.assertIn(grammar, results)

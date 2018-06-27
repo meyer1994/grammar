@@ -136,27 +136,30 @@ class Grammar(object):
         self.add_production(new_symbol, (Grammar.EPSILON,))
 
     def remove_left_recursion(self):
-        print(self)
         ordered_vn = [ i for i in self.non_terminals ]
-        pprint(ordered_vn)
-        print('='*10)
 
         for i, ai in enumerate(ordered_vn):
             for j in range(i):
                 aj = ordered_vn[j]
-                prods_to_remove = set()
-                prods_to_add = set()
-                aj = ordered_vn[j]
-                for prod in self[ai]:
-                    if prod[0] == aj:
-                        self.productions.discard(Prod(ai, prod))
-                        for production in self[aj]:
-                            new_prod = production + prod[1:]
-                            self.add_production(ai, new_prod)
-                            # prods_to_add.append(Prod(ordered_vn[i], production + prod.p[1:]))
+                prods_ai_to_aj = { (ai, p) for p in self[ai] if p[0] == aj }
+                print(f'[{ai}, {aj}]')
+                print(prods_ai_to_aj)
+                for p in prods_ai_to_aj:
+                    self.productions.discard(p)
 
+                aj_prods = self[aj]
+                for _, ai_prod in prods_ai_to_aj:
+                    for aj_prod in aj_prods:
+                        if aj_prod == (Grammar.EPSILON,):
+                            new_prod = ai_prod[1:]
+                        else:
+                            new_prod = aj_prod + ai_prod[1:]
+
+                        if new_prod:
+                            self.add_production(ai, new_prod)
+
+                pprint(self.productions)
             self.remove_direct_left_recursion(ai)
-        print(self)
 
     def is_empty(self):
         '''
