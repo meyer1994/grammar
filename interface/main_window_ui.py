@@ -3,31 +3,16 @@ import re
 from copy import deepcopy
 from functools import wraps
 from collections import OrderedDict
-from pprint import pprint
 
-from layout import Ui_MainWindow
+from interface.layout import Ui_MainWindow
 from PyQt5.QtWidgets import QMainWindow, QListWidgetItem
 from PyQt5.QtCore import Qt
 
-from grammar.grammar import Grammar
-from grammar.production import Prod
+from grammar import Grammar, Prod
 
 SPACE_REMOVE_RE = re.compile(r' +')
 NON_TERMINAL_RE = re.compile(r'[A-Z][\d]*')
 TERMINAL_RE = re.compile(r'[a-z\d]+')
-
-'''
-S -> A B
-A -> a A | &
-B -> b B | &
-
-S -> A b C D | E F
-A -> a A | &
-C -> E C F | c
-D -> C D | d D d | &
-E -> e E | &
-F -> F S | f F | g
-'''
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):

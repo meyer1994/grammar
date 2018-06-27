@@ -1,2 +1,2 @@
-from grammar.grammar import Prod
+from grammar.production import Prod
 from grammar.grammar import Grammar
