@@ -5,3 +5,14 @@
 
 
 Grammar studies
+
+To run:
+```
+pip install -r requirements.txt
+python main.py
+```
+
+Tests:
+```
+python -m unittest tests -vb
+```
