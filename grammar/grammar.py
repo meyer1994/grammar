@@ -128,6 +128,10 @@ class Grammar(object):
         new_symbol = self._get_next_nt(symbol)
         self.non_terminals.add(new_symbol)
 
+        if (Grammar.EPSILON,) in no_recursion:
+            no_recursion -= { (Grammar.EPSILON,) }
+            self.add_production(symbol, (new_symbol,))
+
         for prod in no_recursion:
             self.add_production(symbol, prod + (new_symbol,))
 
@@ -177,10 +181,6 @@ class Grammar(object):
         tmp_grammar.remove_simple()
         tmp_grammar.remove_useless()
 
-        # Create reachable table, only non-terminals
-        table = {}
-        for nt in tmp_grammar.non_terminals:
-            table[nt] = tmp_grammar.reachable(nt) - tmp_grammar.terminals
 
         for nt in tmp_grammar.non_terminals:
             visited = set()
