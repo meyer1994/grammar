@@ -423,9 +423,6 @@ class TestRecursion(unittest.TestCase):
 
         grammar.remove_direct_left_recursion('P')
         grammar.remove_direct_left_recursion('C')
-        print(grammar)
-        print('='*15)
-        print(exp_grammar)
         self.assertEqual(grammar, exp_grammar)
 
     def test_remove_left_recursion(self):
