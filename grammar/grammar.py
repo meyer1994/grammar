@@ -113,11 +113,12 @@ class Grammar(object):
         return { s: self._symbol_simple(s) for s in self.non_terminals }
 
     def remove_direct_left_recursion(self, symbol):
-        direct_recursion = { p for p in self[symbol] if p[0] == symbol }
-        if not direct_recursion:
-            return
-
+        direct = { p for p in self[symbol] if p[0] == symbol }
         no_recursion = { p for p in self[symbol] if p[0] != symbol }
+
+        # No direct recursion
+        if len(direct) == 0:
+            return
 
         # Remove prods
         for p in self[symbol]:
@@ -130,7 +131,7 @@ class Grammar(object):
         for prod in no_recursion:
             self.add_production(symbol, prod + (new_symbol,))
 
-        for prod in direct_recursion:
+        for prod in direct:
             self.add_production(new_symbol, prod[1:] + (new_symbol,))
         self.add_production(new_symbol, (Grammar.EPSILON,))
 
@@ -141,8 +142,6 @@ class Grammar(object):
             for j in range(i):
                 aj = ordered_vn[j]
                 prods_ai_to_aj = { (ai, p) for p in self[ai] if p[0] == aj }
-                print(f'[{ai}, {aj}]')
-                print(prods_ai_to_aj)
                 for p in prods_ai_to_aj:
                     self.productions.discard(p)
 
@@ -157,7 +156,6 @@ class Grammar(object):
                         if new_prod:
                             self.add_production(ai, new_prod)
 
-                pprint(self.productions)
             self.remove_direct_left_recursion(ai)
 
     def is_empty(self):
@@ -174,26 +172,29 @@ class Grammar(object):
             self.productions.copy(),
             self.start)
 
-
-
         # Proper
-        # tmp_grammar.remove_epsilon()
+        tmp_grammar.remove_epsilon()
+        tmp_grammar.remove_simple()
         tmp_grammar.remove_useless()
-        # tmp_grammar.remove_simple()
 
+        # Create reachable table, only non-terminals
+        table = {}
+        for nt in tmp_grammar.non_terminals:
+            table[nt] = tmp_grammar.reachable(nt) - tmp_grammar.terminals
 
-        visited = set([ tmp_grammar.start ])
-        stack = [ tmp_grammar.start ]
-        while len(stack) > 0:
-            item = stack.pop()
-            reachable = self.reachable(item) - tmp_grammar.terminals
-            reachable.discard(item)
-            if any(i in visited for i in reachable):
-                return True
-            for i in reachable:
-                stack.append(i)
-                visited.add(i)
-        return False
+        for nt in tmp_grammar.non_terminals:
+            visited = set()
+            stack = [ nt ]
+            while len(stack) > 0:
+                item = stack.pop()
+                for prod in tmp_grammar[item]:
+                    non_term = set(prod) - tmp_grammar.terminals
+                    for n in non_term:
+                        if n in visited:
+                            return False
+                        visited.add(n)
+                        stack.append(n)
+        return True
 
     def is_factored(self):
         '''
@@ -499,54 +500,34 @@ class Grammar(object):
         return first_set
 
     def has_direct_left_recursion(self):
-        non_terminal_with_left_recursion = set()
-        for prod in self.productions:
-            if prod.n == prod.p[0]:
-                non_terminal_with_left_recursion.add(prod.n)
-        return non_terminal_with_left_recursion
+        direct = self._get_direct_left()
+        return len(direct) > 0
+
+    def _get_direct_left(self):
+        return { p.n for p in self.productions if p.n == p.p[0] }
 
     def has_indirect_left_recursion(self):
-        non_terminal_with_left_recursion = set()
-        # Gramatica tem que ser propria?
-        # (Vn U Vt)*
-        # union = self.non_terminals | self.terminals | set(Grammar.EPSILON)
-        for non_terminal_symbol in self.non_terminals:
-            old_set = set()
-            # get all the non_terminal symbols that are in the most left side of the prod
-            for (non_term, prod) in self.productions:
-                if non_term == non_terminal_symbol and prod[0] in self.non_terminals:
-                    old_set.add(prod[0])
-            old_set.discard(non_terminal_symbol)
-            while True:
-                # Ni
-                new_set = set()
+        indirect = self._get_indirect_left()
+        return len(indirect) > 0
 
-                for (non_term, prod) in self.productions:
-                    # A in Vi-1
-                    if non_term not in old_set:
-                        continue
+    def _get_indirect_left(self):
+        indirect = set()
+        first = self._first()
 
-                    # B.beta type production
-                    if prod[0] in self.non_terminals:
-                        new_set.add(prod[0])
+        for nt in self.non_terminals:
+            not_direct = { p for p in self[nt] if p[0] != nt }
 
-                # Ni-1 U new_set
-                new_set |= old_set
+            for prod in not_direct:
+                prod_first = self._first_sequence(first, prod)
+                if nt in prod_first:
+                    indirect.add(nt)
 
-                if new_set == old_set:
-                    break
-
-                old_set = new_set
-
-            if non_terminal_symbol in old_set:
-                non_terminal_with_left_recursion.add(non_terminal_symbol)
-
-        return non_terminal_with_left_recursion
+        return indirect
 
     def has_left_recursion(self):
-        direct = self.has_direct_left_recursion()
-        indirect = self.has_indirect_left_recursion()
-        return direct or indirect
+        direct = self._get_direct_left()
+        indirect = self._get_indirect_left()
+        return len(direct | indirect) > 0
 
     @staticmethod
     def epsilon_combinations(prod, epsilon_set):

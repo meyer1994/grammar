@@ -12,7 +12,7 @@ from grammar import Grammar, Prod
 
 SPACE_REMOVE_RE = re.compile(r' +')
 NON_TERMINAL_RE = re.compile(r'[A-Z][\d]*')
-TERMINAL_RE = re.compile(r'[a-z\d]+')
+TERMINAL_RE = re.compile(r'[a-z\d\+\{\}\!\@\#\$\%\*\(\)]+')
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -123,6 +123,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         lines = text.split('\n')
 
         for line in lines:
+            if line == '':
+                continue
             line = line.strip()
             non_terminal, expressions = line.split('->')
             non_terminal = non_terminal.strip()
@@ -211,9 +213,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         grammar = deepcopy(self.selected_grammar)
         grammar_name = f'{self.lineInputGrammarName.text()}_direct'
 
-        direct = grammar.has_direct_left_recursion()
-        for s in direct:
-            grammar.remove_direct_left_recursion(s)
+        for nt in grammar._get_direct_left():
+            grammar.remove_direct_left_recursion(nt)
 
         self.log('Removing direct left recursions')
         self.log_grammar(grammar_name, grammar)
@@ -222,8 +223,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @has_grammar
     def _check_recursion(self):
         grammar = self.selected_grammar
-        direct = grammar.has_direct_left_recursion()
-        indirect = grammar.has_indirect_left_recursion()
+        direct = grammar._get_direct_left()
+        indirect = grammar._get_indirect_left()
         self.log(f'Non-terminals with direct recursion:\t{direct}')
         self.log(f'Non-terminals with indirect recursion:\t{indirect}')
 
