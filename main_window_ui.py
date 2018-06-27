@@ -92,7 +92,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def has_grammar(fun):
         @wraps(fun)
         def wrapped(self, *args, **kwargs):
-            if self.selected_grammar == None:
+            if self.selected_grammar is None:
                 self.log('No grammar selected')
                 return
             return fun(self)

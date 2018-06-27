@@ -6,7 +6,6 @@ from pprint import pprint
 
 from grammar.production import Prod
 
-
 class Grammar(object):
 
     EPSILON = '&'
@@ -633,20 +632,23 @@ class Grammar(object):
         A simple production is a production of the form:
             { A -> B | A, B are non terminals }
         '''
-        new_set = set([ symbol ])
+        visited = { symbol }
+        stack = [ symbol ]
 
-        for prod in self[symbol]:
-            if self._is_simple_prod(prod):
-                for i in self._symbol_simple(prod[0]):
-                    new_set.add(i)
+        while len(stack) > 0:
+            symbol = stack.pop()
+            for prod in self[symbol]:
+                if self._is_simple_prod(prod) and prod[0] not in visited:
+                    stack.append(prod[0])
+                    visited.add(prod[0])
 
-        return new_set
+        return visited
 
-    def _is_simple_prod(self, prod):
+    def _is_simple_prod(self, p):
         '''
         Checks if some production is simple.
         '''
-        return len(prod) == 1 and prod[0] in self.non_terminals
+        return len(p) == 1 and p[0] in self.non_terminals
 
     def _to_line(self, nt):
         productions = self[nt]
@@ -656,7 +658,6 @@ class Grammar(object):
             line += f' {prod} |'
         line = line[:-2]
         return line
-
 
     def __eq__(self, other):
         vnt = self.non_terminals == other.non_terminals
