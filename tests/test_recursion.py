@@ -151,7 +151,6 @@ class TestRecursion(unittest.TestCase):
         grammar = Grammar(non_terminals, terminals, productions, start)
         self.assertFalse(grammar.has_left_recursion())
 
-
     def test_epslon_remove_recursion(self):
         non_terminals = set('SAB')
         terminals = set('ab')
@@ -377,6 +376,56 @@ class TestRecursion(unittest.TestCase):
             expected_start)
 
         grammar.remove_direct_left_recursion('S1')
+        self.assertEqual(grammar, exp_grammar)
+
+    def test_remove_direct_left_recursion4(self):
+        non_terminals = set('PBKVC')
+        terminals = set(';cvbe') | { 'com' }
+        productions = {
+            Prod('P', ('P', ';', 'B')),
+            Prod('P', ('B',)),
+            Prod('B', ('K', 'V', 'C')),
+            Prod('K', ('c', 'K')),
+            Prod('K', (Grammar.EPSILON,)),
+            Prod('V', ('v', 'V')),
+            Prod('V', (Grammar.EPSILON,)),
+            Prod('C', ('b', 'K', 'V', ';', 'C', 'e')),
+            Prod('C', ('b', 'C', 'e')),
+            Prod('C', ('C', 'com')),
+            Prod('C', (Grammar.EPSILON,))
+        }
+        start = 'P'
+        grammar = Grammar(non_terminals, terminals, productions, start)
+
+        exp_non_terminals = set('PBKVC') | { 'P0', 'C0' }
+        exp_terminals = set(';cvbe') | { 'com' }
+        exp_productions = {
+            Prod('P', ('B', 'P0')),
+            Prod('P0', (';', 'B', 'P0')),
+            Prod('P0', (Grammar.EPSILON,)),
+            Prod('B', ('K', 'V', 'C')),
+            Prod('K', ('c', 'K')),
+            Prod('K', (Grammar.EPSILON,)),
+            Prod('V', ('v', 'V')),
+            Prod('V', (Grammar.EPSILON,)),
+            Prod('C', ('b', 'K', 'V', ';', 'C', 'e', 'C0')),
+            Prod('C', ('b', 'C', 'e', 'C0')),
+            Prod('C', ('C0',)),
+            Prod('C0', ('com', 'C0')),
+            Prod('C0', (Grammar.EPSILON,)),
+        }
+        exp_start = 'P'
+        exp_grammar = Grammar(
+            exp_non_terminals,
+            exp_terminals,
+            exp_productions,
+            exp_start)
+
+        grammar.remove_direct_left_recursion('P')
+        grammar.remove_direct_left_recursion('C')
+        print(grammar)
+        print('='*15)
+        print(exp_grammar)
         self.assertEqual(grammar, exp_grammar)
 
     def test_remove_left_recursion(self):

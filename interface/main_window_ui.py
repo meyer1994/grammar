@@ -12,7 +12,7 @@ from grammar import Grammar, Prod
 
 SPACE_REMOVE_RE = re.compile(r' +')
 NON_TERMINAL_RE = re.compile(r'[A-Z][\d]*')
-TERMINAL_RE = re.compile(r'[a-z\d\+\{\}\!\@\#\$\%\*\(\)]+')
+TERMINAL_RE = re.compile(r'[a-z\d\+\{\}\!\@\#\$\%\*\(\)\;\?\:\.\,\_\-]+')
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
