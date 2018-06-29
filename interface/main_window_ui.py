@@ -12,7 +12,7 @@ from grammar import Grammar, Prod
 
 SPACE_REMOVE_RE = re.compile(r' +')
 NON_TERMINAL_RE = re.compile(r'[A-Z][\d]*')
-TERMINAL_RE = re.compile(r'[a-z\d\+\{\}\!\@\#\$\%\*\(\)\;\?\:\.\,\_\-]+')
+# TERMINAL_RE = re.compile(r'[a-z\d\+\{\}\!\@\#\$\%\*\(\)\;\?\:\.\,\_\-]+')
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -98,15 +98,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.log(f'Invalid non-terminal: "{non_terminal}"')
                     return
 
-            # Check productions
-            for productions in table.values():
-                for prod in productions:
-                    if prod == (Grammar.EPSILON,):
-                        continue
-                    for symbol in prod:
-                        if not self._valid_symbol(symbol):
-                            self.log(f'Invalid expression: "{prod}"')
-                            return
+            # Check for $
+            for value in table.values():
+                for prod in value:
+                    if Grammar.FINISH in prod:
+                        self.log('Invalid symbol "$" in grammar')
+                        return
 
             return fun(self)
         return wrapped
@@ -313,7 +310,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for prods in table.values():
             for prod in prods:
                 for symbol in prod:
-                    if re.match(TERMINAL_RE, symbol):
+                    if not re.match(NON_TERMINAL_RE, symbol):
                         terminals.add(symbol)
 
         # Productions
