@@ -1,19 +1,21 @@
-sudo: "false"
+os: 'linux'
+dist: 'bionic'
 
-language: "python"
+language: 'python'
 python:
-  - "3.6"
-  - "3.6-dev"  # 3.6 development branch
-  - "3.7-dev"  # 3.7 development branch
-  - "nightly"
+  - '3.7'
+  - '3.8'
+
+cache:
+    pip: true
 
 install:
-  - "pip install -r requirements.txt"
+  - 'pip install -r requirements.txt'
 
 script:
-  - "coverage run -m unittest tests -vb"
+  - 'coverage run -m unittest tests -vb'
 
 after_success:
-  - "coverage report -m"
-  - "pip install codecov"
-  - "codecov"
+  - 'coverage report -m'
+  - 'pip install codecov'
+  - 'codecov'
