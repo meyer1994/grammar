@@ -1,4 +1,4 @@
 appdirs==1.4.4
 coverage==5.3
 PyQt5==5.15.1
-sip==5.4.0
+sip==5.5.0
